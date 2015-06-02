@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+	<meta charset="utf-8">
+	<style>
+		html,
+		body {
+			cursor: default;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+
+		.hbox {
+			display: flex;
+			flex-flow: row;
+		}
+
+		.fullHeight {
+			box-sizing: border-box;
+			height: 100%;
+			margin: 0;
+		}
+
+		.panel {
+			border-top: 1px solid rgb(230, 230, 230);
+		}
+
+		.script {
+			background-color: #eee;
+			border: 0 none;
+			border-right: 1px solid rgb(64%, 64%, 64%);
+			font-family: monospace;
+			flex: 2;
+			margin: 0 5px;
+			padding: 0.3rem;
+			resize: none;
+		}
+
+		.script::-webkit-input-placeholder {
+			color: #333;
+			font-family: sans-serif;
+		}
+
+		.hotkeys {
+			flex: 1;
+			margin: 0 5px;
+			min-width: 145px;
+		}
+
+		.hotkeys-title {
+			color: rgb(110, 116, 128);
+			font-size: 16px;
+			margin: 0.5rem 0 1rem;
+		}
+
+		.hotkey {
+			margin-top: 0.5rem;
+		}
+
+		.hotkey-label {
+			display: block;
+		}
+	</style>
+	<body>
+		<div class="hbox fullHeight panel">
+			<textarea class="fullHeight script" id="script" placeholder="The generated test script will show up here once you begin recording."></textarea>
+			<div class="hotkeys">
+				<div class="hotkeys-title">Hotkeys</div>
+
+				<div class="hotkey">
+					<label class="hotkey-label" for="hotkey-toggleState">Pause/resume recorder</label>
+					<input class="hotkey-input" id="hotkey-toggleState">
+				</div>
+
+				<div class="hotkey">
+					<label class="hotkey-label" for="hotkey-insertCallback">Insert callback</label>
+					<input class="hotkey-input" id="hotkey-insertCallback">
+				</div>
+
+				<div class="hotkey">
+					<label class="hotkey-label" for="hotkey-insertMouseMove">Insert move to current mouse position</label>
+					<input class="hotkey-input" id="hotkey-insertMouseMove">
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

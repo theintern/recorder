@@ -1,0 +1,19 @@
+{
+	"manifest_version": 2,
+	"name": "Intern Recorder",
+	"description": "Creates functional tests based on interaction with a site from your browser.",
+	"version": "1.0.0",
+	"minimum_chrome_version": "26.0",
+	"devtools_page": "devtools.html",
+	"background": {
+		"scripts": [ "Recorder.js", "background.js" ],
+		"persistent": false
+	},
+	"permissions": [
+		"downloads",
+		"http://*/*",
+		"https://*/*",
+		"tabs",
+		"webNavigation"
+	]
+}
