@@ -9,6 +9,8 @@ chrome.devtools.panels.create('Intern', 'recorder-on.png', 'panel.html', functio
 		{ action: 'save', button: [ 'statusBarIcons/save.png', 'Save', false ] }
 	];
 
+	var recordButton;
+
 	controls.forEach(function (control) {
 		var button = panel.createStatusBarButton.apply(panel, control.button);
 		button.onClicked.addListener(function () {
@@ -20,10 +22,7 @@ chrome.devtools.panels.create('Intern', 'recorder-on.png', 'panel.html', functio
 		});
 
 		if (control.action === 'toggleState') {
-			button.onClicked.addListener(function () {
-				var state = recorderProxy.recording ? 'off' : 'on';
-				button.update('statusBarIcons/record_' + state + '.png');
-			});
+			recordButton = button;
 		}
 	});
 
@@ -33,6 +32,16 @@ chrome.devtools.panels.create('Intern', 'recorder-on.png', 'panel.html', functio
 		}
 
 		recorderProxy = new RecorderProxy(chrome, window);
+		(function () {
+			var oldSetRecording = recorderProxy.setRecording;
+			recorderProxy.setRecording = function (value) {
+				if (recordButton) {
+					recordButton.update('statusBarIcons/record_' + (value ? 'on' : 'off') + '.png');
+				}
+
+				return oldSetRecording.apply(this, arguments);
+			};
+		})();
 	});
 
 	// To avoid recording spurious interaction when a user has switched to another dev tools panel, pause recording

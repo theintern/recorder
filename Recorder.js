@@ -1,4 +1,12 @@
 var Recorder = (function () {
+	function extraIndent(num) {
+		var indent = '';
+		while (num-- > 0) {
+			indent += '\t';
+		}
+		return indent;
+	}
+
 	var getSeleniumKey = (function () {
 		var KEY_MAP = {
 			// Backspace
@@ -124,6 +132,28 @@ var Recorder = (function () {
 		};
 	})();
 
+	var TEMPLATES = {
+		suiteOpen: [
+			'define(function (require) {',
+			'	var tdd = require(\'intern!tdd\');',
+			'	tdd.suite(\'recorder-generated suite\', function () {',
+			''
+		].join('\n'),
+		suiteClose: [
+			'	});',
+			'});'
+		].join('\n'),
+		testOpen: [
+			'		tdd.test(\'$NAME\', function () {',
+			'			return this.remote'
+		].join('\n'),
+		testClose: [
+			';',
+			'		});',
+			''
+		].join('\n')
+	};
+
 	function Recorder(chrome, storage) {
 		if (storage == null) {
 			storage = localStorage;
@@ -135,34 +165,56 @@ var Recorder = (function () {
 
 		this._initializeScript();
 		this._initializePort();
+		this._initializeNavigation();
+		this.clear();
 	}
 
 	Recorder.prototype = {
 		constructor: Recorder,
 
+		_currentModifiers: null,
+		_currentTest: null,
+
 		hotkeys: null,
 
+		_ignoreKeyups: null,
+
 		_lastMouseMove: null,
+		_lastTestId: 0,
 
 		_port: null,
 
 		recording: false,
 
 		_script: null,
+		_scriptTree: null,
 
 		storage: null,
 
 		tabId: null,
 
 		clear: function () {
-			console.log('TODO: clear');
+			this._currentModifiers = {};
+			this._currentTest = null;
+			this._lastMouseMove = null;
+			this._lastTestId = 0;
+			this._ignoreKeyups = {};
+			this._script = '';
+			this._scriptTree = [];
+			this.newTest();
+		},
+
+		_eraseLast: function (numCommands) {
+			var commands = this._currentTest.commands;
+			commands.splice(commands.length - numCommands, numCommands);
+			this._renderScriptTree();
 		},
 
 		_getDefaultHotkeys: function () {
 			return {
-				'insertCallback': { ctrlKey: true, shiftKey: true, keyIdentifier: /* c */ 'U+0063' },
+				'insertCallback': { ctrlKey: true, shiftKey: true, keyIdentifier: /* c */ 'U+0043' },
 				'insertMouseMove': { ctrlKey: true, shiftKey: true, keyIdentifier: /* m */ 'U+004D' },
-				'toggleState': { ctrlKey: true, shiftKey: true, keyIdentifier: /* p */ 'U+0070' }
+				'toggleState': { ctrlKey: true, shiftKey: true, keyIdentifier: /* p */ 'U+0050' }
 			};
 		},
 
@@ -170,6 +222,62 @@ var Recorder = (function () {
 			return {
 				send: function () {}
 			};
+		},
+
+		_handleHotkeyEvent: function (event) {
+			if (event.type !== 'keydown') {
+				return;
+			}
+
+			var ignoreKeyupMap = this._ignoreKeyups;
+			function ignore(keyIdentifier) {
+				ignoreKeyupMap[keyIdentifier] = true;
+			}
+
+			nextKey:
+			for (var hotkeyId in this.hotkeys) {
+				var hotkey = this.hotkeys[hotkeyId];
+
+				var hasKeys = false;
+				for (var key in hotkey) {
+					hasKeys = true;
+					if (event[key] !== hotkey[key]) {
+						continue nextKey;
+					}
+				}
+
+				if (!hasKeys) {
+					continue;
+				}
+
+				if (!this.recording && hotkeyId !== 'toggleState') {
+					return;
+				}
+
+				ignore(hotkey.keyIdentifier);
+
+				var numCommandsToErase = 0;
+
+				[
+					[ 'altKey', 'Alt' ],
+					[ 'ctrlKey', 'Control' ],
+					[ 'metaKey', 'Meta' ],
+					[ 'shiftKey', 'Shift' ]
+				].forEach(function (key) {
+					if (hotkey[key[0]] && this._currentModifiers[key[1]]) {
+						ignore(key[1]);
+						++numCommandsToErase;
+						delete this._currentModifiers[key[1]];
+					}
+				}, this);
+
+				var method = hotkeyId;
+				this._eraseLast(numCommandsToErase);
+				this[method]();
+				return true;
+			}
+
+			return false;
 		},
 
 		_initializePort: function () {
@@ -213,68 +321,183 @@ var Recorder = (function () {
 			this._port = this._getDefaultPort();
 		},
 
+		_initializeNavigation: function () {
+			var self = this;
+			this.chrome.webNavigation.onCommitted.addListener(function (detail) {
+				if (!self.recording || detail.tabId !== self.tabId) {
+					return;
+				}
+
+				if (detail.transitionType === 'reload') {
+					self._record('reload');
+				}
+				else {
+					// TODO: handle back/forwards, if possible
+				}
+
+				self._injectContentScript();
+			});
+		},
+
 		_initializeScript: function () {
 			this._script = '';
+			this._scriptTree = [];
+		},
+
+		_injectContentScript: function () {
+			this.chrome.tabs.executeScript(this.tabId, { file: 'eventProxy.js' });
 		},
 
 		insertCallback: function () {
-			console.log('TODO: insertCallback');
+			if (!this.recording) {
+				return;
+			}
+
+			this._record('then', [ function () {} ]);
+			this._renderScriptTree();
 		},
 
 		insertMouseMove: function () {
-			console.log('TODO: insertMouseMove');
+			if (!this.recording || !this._lastMouseMove) {
+				return;
+			}
+
+			var event = this._lastMouseMove;
+
+			this._record('findByXpath', [ event.target ]);
+			this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
+			this._record('end', null, 1);
+			this._renderScriptTree();
 		},
 
 		newTest: function () {
-			console.log('TODO: newTest');
+			var test = {
+				name: 'Test ' + (++this._lastTestId),
+				commands: [],
+				start: 0,
+				end: 0
+			};
+
+			this._currentTest = test;
+			this._scriptTree.push(test);
+			this._renderScriptTree();
 		},
 
 		recordEvent: function (event) {
+			if (this._handleHotkeyEvent(event)) {
+				return;
+			}
+
+			if (!this.recording) {
+				return;
+			}
+
 			switch (event.type) {
 				case 'click':
 					// mousedown (2, leaving find and move), mouseup (4)
 					this._eraseLast(6);
-					this._record('click');
-					this._record('end');
+					this._record('click', null, 1);
+					this._record('end', null, 1);
 					break;
 				case 'dblclick':
-					// mousedown (2, leaving find and move), mouseup (4), click (2), mousedown (4), mouseup (4)
-					this._eraseLast(16);
-					this._record('doubleClick');
-					this._record('end');
+					// click (2), mousedown (4), mouseup (4)
+					this._eraseLast(10);
+					this._record('doubleClick', null, 1);
+					this._record('end', null, 1);
 					break;
 				case 'keydown':
+					if (isModifierKey(event.keyIdentifier)) {
+						this._currentModifiers[event.keyIdentifier] = true;
+					}
+
 					this._record('pressKeys', [ getSeleniumKey(event.keyIdentifier, event.location) ]);
 					break;
 				case 'keyup':
+					if (this._ignoreKeyups[event.keyIdentifier]) {
+						delete this._ignoreKeyups[event.keyIdentifier];
+						delete this._currentModifiers[event.keyIdentifier];
+						return;
+					}
+
 					if (isModifierKey(event.keyIdentifier)) {
+						delete this._currentModifiers[event.keyIdentifier];
 						this._record('pressKeys', [ getSeleniumKey(event.keyIdentifier, event.location) ]);
 					}
 					break;
 				case 'mousedown':
 					this._record('findByXpath', [ event.target ]);
-					this._record('moveMouseTo', [ event.elementX, event.elementY ]);
-					this._record('pressMouseButton', [ event.button ]);
-					this._record('end');
+					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
+					this._record('pressMouseButton', [ event.button ], 1);
+					this._record('end', null, 1);
 					break;
 				case 'mousemove':
 					this._lastMouseMove = event;
 					break;
 				case 'mouseup':
 					this._record('findByXpath', [ event.target ]);
-					this._record('moveMouseTo', [ event.elementX, event.elementY ]);
-					this._record('releaseMouseButton', [ event.button ]);
-					this._record('end');
+					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
+					this._record('releaseMouseButton', [ event.button ], 1);
+					this._record('end', null, 1);
 					break;
 			}
+
+			this._renderScriptTree();
 		},
 
-		_record: function (method, args) {
-			console.log('recording', method, args);
+		_record: function (method, args, indent) {
+			var text = '\n\t\t\t\t' + extraIndent(indent) + '.' + method + '(';
+
+			if (args && args.length) {
+				args.forEach(function (arg, index) {
+					if (index > 0) {
+						text += ', ';
+					}
+
+					if (typeof arg === 'function') {
+						text += arg.toString();
+					}
+					else if (typeof arg === 'string') {
+						text += '\'' + arg.replace(/'/g, '\\\'') + '\'';
+					}
+					else {
+						text += String(arg);
+					}
+				});
+			}
+
+			text += ')';
+
+			if (!this._currentTest) {
+				throw new Error('Recording command for a test, but there is no current test');
+			}
+
+			var commands = this._currentTest.commands;
+			var start = commands.length ? commands[commands.length - 1].end : this._currentTest.start;
+
+			commands.push({
+				text: text,
+				method: method,
+				args: args,
+				start: start,
+				end: start + text.length
+			});
+
+			this._renderScriptTree();
 		},
 
-		_eraseLast: function (numCommands) {
-			console.log('erasing', numCommands);
+		_renderScriptTree: function () {
+			var script = TEMPLATES.suiteOpen;
+
+			this._scriptTree.forEach(function (test) {
+				script += TEMPLATES.testOpen.replace('$NAME', test.name);
+				test.commands.forEach(function (command) {
+					script += command.text;
+				});
+				script += TEMPLATES.testClose;
+			});
+
+			script += TEMPLATES.suiteClose;
+			this.setScript(script);
 		},
 
 		save: function () {
@@ -311,7 +534,11 @@ var Recorder = (function () {
 			}
 
 			if (!this.recording) {
-				this.chrome.tabs.executeScript(this.tabId, { file: 'eventProxy.js' });
+				this._injectContentScript();
+			}
+
+			if (!this._currentTest) {
+				this.newTest();
 			}
 
 			this.recording = !this.recording;

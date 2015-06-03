@@ -45,20 +45,34 @@ function getElementXPath(element) {
 		return;
 	}
 
+	var EVENT_TYPES = 'click dblclick mousedown mouseup mousemove keydown keyup'.split(' ');
+
 	var port = chrome.runtime.connect(chrome.runtime.id, { name: 'eventProxy' });
+	port.onDisconnect.addListener(function disconnect() {
+		port.onDisconnect.removeListener(disconnect);
+		EVENT_TYPES.forEach(function (eventType) {
+			document.removeEventListener(eventType, sendEvent, true);
+			loaded = false;
+			port = null;
+		});
+	});
 
 	function sendEvent(event) {
 		var rect = event.target.getBoundingClientRect();
 
 		var detail = {
+			altKey: event.altKey,
 			button: event.button,
 			buttons: event.buttons,
-			location: event.location,
-			keyIdentifier: event.keyIdentifier,
+			ctrlKey: event.ctrlKey,
 			clientX: event.clientX,
 			clientY: event.clientY,
 			elementX: event.clientX - rect.left,
 			elementY: event.clientY - rect.top,
+			keyIdentifier: event.keyIdentifier,
+			location: event.location,
+			metaKey: event.metaKey,
+			shiftKey: event.shiftKey,
 			target: getElementXPath(event.target),
 			type: event.type
 		};
@@ -69,7 +83,7 @@ function getElementXPath(element) {
 		});
 	}
 
-	'click dblclick mousedown mouseup mousemove keydown keyup'.split(' ').forEach(function (eventType) {
+	EVENT_TYPES.forEach(function (eventType) {
 		document.addEventListener(eventType, sendEvent, true);
 	});
 
