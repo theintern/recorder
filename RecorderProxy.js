@@ -28,6 +28,30 @@ var RecorderProxy = (function () {
 			};
 		}
 
+		var CHAR_MAP;
+		if (navigator.platform === 'MacIntel') {
+			CHAR_MAP = {
+				'U+0008': 'Backspace',
+				'U+0009': '↹',
+				'U+0020': 'Space',
+				'U+001B': '⎋',
+				'U+007F': 'Delete',
+				'Down': '↓',
+				'Left': '←',
+				'Right': '→',
+				'Up': '↑'
+			};
+		}
+		else {
+			CHAR_MAP = {
+				'U+0008': 'Backspace',
+				'U+0009': 'Tab',
+				'U+0020': 'Space',
+				'U+001B': 'Esc',
+				'U+007F': 'Del'
+			};
+		}
+
 		return function (hotkey) {
 			function append(key) {
 				key = META_MAP[key] || key;
@@ -36,6 +60,8 @@ var RecorderProxy = (function () {
 
 			var label = '';
 			var key = hotkey.keyIdentifier;
+			var char = key.slice(0, 2) === 'U+' ? String.fromCharCode(Number('0x' + key.slice(2))).toUpperCase() : null;
+			var isLetter = Boolean(char) && char !== char.toLowerCase();
 
 			if (hotkey.ctrlKey) {
 				append('Control');
@@ -45,12 +71,9 @@ var RecorderProxy = (function () {
 				append('Alt');
 			}
 
-			if (
-				hotkey.shiftKey &&
-				// shifted keys are identified by their shifted value already, so don’t write the shift modifier if the
-				// key is a value key
-				(key.slice(0, 2) !== 'U+' || key === 'U+0020')
-			) {
+			// shifted non-letter keys are identified by their shifted value already, so don’t display the shift
+			// modifier if the key is a shifted non-letter (e.g. 1 -> !, 2 -> @)
+			if (hotkey.shiftKey && (!char || char === ' ' || isLetter)) {
 				append('Shift');
 			}
 
@@ -58,11 +81,11 @@ var RecorderProxy = (function () {
 				append('Meta');
 			}
 
-			if (key === 'U+0020') {
-				append('Space');
+			if (key in CHAR_MAP) {
+				append(CHAR_MAP[key]);
 			}
-			else if (key.slice(0, 2) === 'U+') {
-				append(String.fromCharCode(Number('0x' + key.slice(2))));
+			else if (char) {
+				append(char);
 			}
 			else if (!(key in META_MAP)) {
 				append(key);
@@ -76,9 +99,9 @@ var RecorderProxy = (function () {
 		this.chrome = chrome;
 		this.contentWindow = contentWindow;
 
+		this._initializeScript();
 		this._initializePort();
 		this._initializeHotkeys();
-		this._initializeScript();
 	}
 
 	RecorderProxy.prototype = {
@@ -89,6 +112,8 @@ var RecorderProxy = (function () {
 		contentWindow: null,
 
 		_port: null,
+
+		recording: false,
 
 		_script: null,
 
@@ -113,14 +138,15 @@ var RecorderProxy = (function () {
 		_initializePort: function () {
 			var self = this;
 
-			this._port = this.chrome.runtime.connect();
-			this._port.onMessage.addListener(function (message, sender, sendResponse) {
+			this._port = this.chrome.runtime.connect(this.chrome.runtime.id, { name: 'recorderProxy' });
+			this._port.onMessage.addListener(function (message) {
 				if (!self[message.method]) {
 					throw new Error('Method "' + message.method + '" does not exist on RecorderProxy');
 				}
 
-				sendResponse(self[message.method].apply(self, message.args));
+				self[message.method].apply(self, message.args || []);
 			});
+			this._port.postMessage({ method: 'setTabId', args: [ this.chrome.devtools.inspectedWindow.tabId ]});
 		},
 
 		_initializeScript: function () {
@@ -153,7 +179,13 @@ var RecorderProxy = (function () {
 		},
 
 		setScript: function (value) {
-			this._script.value = value;
+			if (value != null) {
+				this._script.value = value;
+			}
+		},
+
+		setRecording: function (value) {
+			this.recording = value;
 		}
 	};
 

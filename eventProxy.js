@@ -12,11 +12,11 @@ function getElementXPath(element) {
 			break;
 		}
 		else if (element.parentNode) {
-			var nodeName = element.nodeName,
-				hasNamedSiblings = Boolean(element.previousElementSibling || element.nextElementSibling),
-				// XPath is 1-indexed
-				index = 1,
-				sibling = element;
+			var nodeName = element.nodeName;
+			var hasNamedSiblings = Boolean(element.previousElementSibling || element.nextElementSibling);
+			// XPath is 1-indexed
+			var index = 1;
+			var sibling = element;
 
 			if (hasNamedSiblings) {
 				while ((sibling = sibling.previousElementSibling)) {
@@ -45,70 +45,33 @@ function getElementXPath(element) {
 		return;
 	}
 
-	var debounce = (function () {
-		var waiting = [];
-
-		function debouncer(callback, timeout) {
-			var timer,
-				executor;
-
-			function clean() {
-				var index = waiting.indexOf(executor);
-				index > -1 && waiting.splice(index, 1);
-				executor = timer = null;
-			}
-
-			return function () {
-				clearTimeout(timer);
-				clean();
-
-				var self = this;
-				var args = arguments;
-
-				executor = function () {
-					clean();
-					callback.apply(self, args);
-				};
-
-				waiting.push(executor);
-				timer = setTimeout(executor, timeout);
-			};
-		}
-
-		debouncer.flush = function () {
-			var executor;
-			while ((executor = waiting.pop())) {
-				executor();
-			}
-		};
-
-		return debouncer;
-	})();
+	var port = chrome.runtime.connect(chrome.runtime.id, { name: 'eventProxy' });
 
 	function sendEvent(event) {
-		debounce.flush();
+		var rect = event.target.getBoundingClientRect();
 
 		var detail = {
 			button: event.button,
 			buttons: event.buttons,
-			keyCode: event.keyCode,
+			location: event.location,
+			keyIdentifier: event.keyIdentifier,
 			clientX: event.clientX,
 			clientY: event.clientY,
+			elementX: event.clientX - rect.left,
+			elementY: event.clientY - rect.top,
 			target: getElementXPath(event.target),
 			type: event.type
 		};
 
-		chrome.runtime.sendMessage(null, {
-			type: 'event',
-			detail: detail
+		port.postMessage({
+			method: 'recordEvent',
+			args: [ detail ]
 		});
 	}
 
-	'click dblclick mousedown mouseup keydown keyup'.split(' ').forEach(function (eventType) {
-		document.addEventListener(eventType, sendEvent);
+	'click dblclick mousedown mouseup mousemove keydown keyup'.split(' ').forEach(function (eventType) {
+		document.addEventListener(eventType, sendEvent, true);
 	});
-
-	document.addEventListener('mousemove', debounce(sendEvent, 500));
 
 	loaded = true;
 })();

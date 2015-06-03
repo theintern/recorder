@@ -1,46 +1,53 @@
 /*global chrome:false, RecorderProxy:false */
 chrome.devtools.panels.create('Intern', 'recorder-on.png', 'panel.html', function (panel) {
-	var recorder;
+	var recorderProxy;
 
 	var controls = [
-		{ action: 'toggleState', button: [ null, 'Record', false ] },
-		{ action: 'clear', button: [ null, 'Clear', false ] },
-		{ action: 'newTest', button: [ null, 'New test', false ] },
-		{ action: 'save', button: [ null, 'Save', false ] }
+		{ action: 'toggleState', button: [ 'statusBarIcons/record_off.png', 'Record', false ] },
+		{ action: 'clear', button: [ 'statusBarIcons/clear.png', 'Clear', false ] },
+		{ action: 'newTest', button: [ 'statusBarIcons/newTest.png', 'New test', false ] },
+		{ action: 'save', button: [ 'statusBarIcons/save.png', 'Save', false ] }
 	];
 
 	controls.forEach(function (control) {
 		var button = panel.createStatusBarButton.apply(panel, control.button);
 		button.onClicked.addListener(function () {
-			if (!recorder) {
+			if (!recorderProxy) {
 				throw new Error('Missing recorder to apply action "' + control.action + '"');
 			}
 
-			recorder.send(control.action);
+			recorderProxy.send(control.action);
 		});
+
+		if (control.action === 'toggleState') {
+			button.onClicked.addListener(function () {
+				var state = recorderProxy.recording ? 'off' : 'on';
+				button.update('statusBarIcons/record_' + state + '.png');
+			});
+		}
 	});
 
 	panel.onShown.addListener(function (window) {
-		if (recorder && window === recorder.contentWindow) {
+		if (recorderProxy && window === recorderProxy.contentWindow) {
 			return;
 		}
 
-		recorder = new RecorderProxy(chrome, window);
+		recorderProxy = new RecorderProxy(chrome, window);
 	});
 
 	// To avoid recording spurious interaction when a user has switched to another dev tools panel, pause recording
 	// automatically when this panel is hidden and resume it when a user switches back
 	var toggleOnShown = false;
 	panel.onShown.addListener(function () {
-		if (recorder && toggleOnShown) {
-			recorder.send('toggleState');
+		if (recorderProxy && toggleOnShown) {
+			recorderProxy.send('toggleState');
 		}
 	});
 
 	panel.onHidden.addListener(function () {
-		if (recorder && recorder.state === recorder.STATE_RECORDING) {
-			toggleOnShown = true;
-			recorder.send('toggleState');
+		if (recorderProxy) {
+			toggleOnShown = recorderProxy.recording;
+			recorderProxy.send('toggleState');
 		}
 		else {
 			toggleOnShown = false;
