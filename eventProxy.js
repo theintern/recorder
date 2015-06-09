@@ -55,7 +55,23 @@ function getElementXPath(element) {
 			loaded = false;
 			port = null;
 		});
+		window.removeEventListener('message', passEvent, false);
 	});
+
+	function send(detail) {
+		if (window !== window.top) {
+			window.parent.postMessage({
+				method: 'recordEvent',
+				detail: detail
+			}, '*');
+		}
+		else {
+			port.postMessage({
+				method: 'recordEvent',
+				args: [ detail ]
+			});
+		}
+	}
 
 	function sendEvent(event) {
 		var rect = event.target.getBoundingClientRect();
@@ -74,14 +90,30 @@ function getElementXPath(element) {
 			metaKey: event.metaKey,
 			shiftKey: event.shiftKey,
 			target: getElementXPath(event.target),
+			targetFrame: [],
 			type: event.type
 		};
 
-		port.postMessage({
-			method: 'recordEvent',
-			args: [ detail ]
-		});
+		send(detail);
 	}
+
+	function passEvent(event) {
+		if (!event.data || event.data.method !== 'recordEvent' || !event.data.detail) {
+			return;
+		}
+
+		var detail = event.data.detail;
+
+		for (var i = 0; i < window.frames.length; ++i) {
+			if (event.source === window.frames[i]) {
+				detail.targetFrame.unshift(i);
+				break;
+			}
+		}
+
+		send(detail);
+	}
+	window.addEventListener('message', passEvent, false);
 
 	EVENT_TYPES.forEach(function (eventType) {
 		document.addEventListener(eventType, sendEvent, true);

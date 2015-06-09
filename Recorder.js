@@ -180,6 +180,8 @@ var Recorder = (function () {
 		_ignoreKeyups: null,
 
 		_lastMouseMove: null,
+		_lastTarget: null,
+		_lastTargetFrame: null,
 		_lastTestId: 0,
 
 		_port: null,
@@ -197,11 +199,16 @@ var Recorder = (function () {
 			this._currentModifiers = {};
 			this._currentTest = null;
 			this._lastMouseMove = null;
+			this._lastTarget = null;
+			this._lastTargetFrame = [];
 			this._lastTestId = 0;
 			this._ignoreKeyups = {};
 			this._script = '';
 			this._scriptTree = [];
-			this.newTest();
+
+			if (this.tabId) {
+				this.newTest();
+			}
 		},
 
 		_eraseLast: function (numCommands) {
@@ -323,20 +330,38 @@ var Recorder = (function () {
 
 		_initializeNavigation: function () {
 			var self = this;
-			this.chrome.webNavigation.onCommitted.addListener(function (detail) {
-				if (!self.recording || detail.tabId !== self.tabId) {
+
+			function handleNavigation(detail) {
+				// frameId !== 0 is a subframe; we could try navigating these if we could figure out what the entry
+				// for the subframe was for a `switchToFrame` call
+				if (!self.recording || detail.tabId !== self.tabId || detail.frameId !== 0) {
 					return;
 				}
 
 				if (detail.transitionType === 'reload') {
+					self._recordTarget(null);
 					self._record('reload');
 				}
-				else {
-					// TODO: handle back/forwards, if possible
+				else if (detail.transitionQualifiers.indexOf('forward_back') !== -1) {
+					// Chrome does not specify whether it was forward button or back button so for now we simply
+					// re-enter the url; this will not correctly test bfcache but will at least ensure we end up back
+					// on the correct page. We could try to guess which way it went by recording tab history but this
+					// would only work if the two surrounding pages are not the same
+					self._recordTarget(null);
+					self._record('get', [ detail.url ]);
+				}
+				else if(detail.transitionQualifiers.indexOf('from_address_bar') !== -1) {
+					self._recordTarget(null);
+					self._record('get', [ detail.url ]);
 				}
 
 				self._injectContentScript();
-			});
+				self._renderScriptTree();
+			}
+
+			this.chrome.webNavigation.onCommitted.addListener(handleNavigation);
+			this.chrome.webNavigation.onReferenceFragmentUpdated.addListener(handleNavigation);
+			this.chrome.webNavigation.onHistoryStateUpdated.addListener(handleNavigation);
 		},
 
 		_initializeScript: function () {
@@ -345,7 +370,7 @@ var Recorder = (function () {
 		},
 
 		_injectContentScript: function () {
-			this.chrome.tabs.executeScript(this.tabId, { file: 'eventProxy.js' });
+			this.chrome.tabs.executeScript(this.tabId, { file: 'eventProxy.js', allFrames: true });
 		},
 
 		insertCallback: function () {
@@ -364,13 +389,27 @@ var Recorder = (function () {
 
 			var event = this._lastMouseMove;
 
-			this._record('findByXpath', [ event.target ]);
+			this._recordTarget(event);
 			this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
-			this._record('end', null, 1);
 			this._renderScriptTree();
 		},
 
 		newTest: function () {
+			if (!this.tabId) {
+				throw new Error('Cannot add new test due to missing tabId');
+			}
+
+			if (this._currentTest) {
+				if (this._lastTarget) {
+					this._record('end', null, 1);
+				}
+				if (this._lastTargetFrame.length) {
+					this._record('switchToFrame', [ null ]);
+				}
+				this._lastTarget = null;
+				this._lastTargetFrame = [];
+			}
+
 			var test = {
 				name: 'Test ' + (++this._lastTestId),
 				commands: [],
@@ -380,7 +419,12 @@ var Recorder = (function () {
 
 			this._currentTest = test;
 			this._scriptTree.push(test);
-			this._renderScriptTree();
+
+			var self = this;
+			this.chrome.tabs.get(this.tabId, function (tab) {
+				self._record('get', [ tab.url ]);
+				self._renderScriptTree();
+			});
 		},
 
 		recordEvent: function (event) {
@@ -394,16 +438,15 @@ var Recorder = (function () {
 
 			switch (event.type) {
 				case 'click':
-					// mousedown (2, leaving find and move), mouseup (4)
-					this._eraseLast(6);
+					// mousedown (2), mouseup (2)
+					this._eraseLast(4);
+					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
 					this._record('click', null, 1);
-					this._record('end', null, 1);
 					break;
 				case 'dblclick':
-					// click (2), mousedown (4), mouseup (4)
-					this._eraseLast(10);
+					// click (1), mousedown (2), mouseup (2)
+					this._eraseLast(5);
 					this._record('doubleClick', null, 1);
-					this._record('end', null, 1);
 					break;
 				case 'keydown':
 					if (isModifierKey(event.keyIdentifier)) {
@@ -425,19 +468,17 @@ var Recorder = (function () {
 					}
 					break;
 				case 'mousedown':
-					this._record('findByXpath', [ event.target ]);
+					this._recordTarget(event);
 					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
 					this._record('pressMouseButton', [ event.button ], 1);
-					this._record('end', null, 1);
 					break;
 				case 'mousemove':
 					this._lastMouseMove = event;
 					break;
 				case 'mouseup':
-					this._record('findByXpath', [ event.target ]);
+					this._recordTarget(event);
 					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
 					this._record('releaseMouseButton', [ event.button ], 1);
-					this._record('end', null, 1);
 					break;
 			}
 
@@ -483,6 +524,50 @@ var Recorder = (function () {
 			});
 
 			this._renderScriptTree();
+		},
+
+		_recordTarget: function (event) {
+			function checkTargetFrameChanged() {
+				if (event.targetFrame.length !== lastTargetFrame.length) {
+					return true;
+				}
+
+				for (var i = 0, j = lastTargetFrame.length; i < j; ++i) {
+					if (event.targetFrame[i] !== lastTargetFrame[i]) {
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+			if (event == null) {
+				event = { target: null, targetFrame: [] };
+			}
+
+			var lastTargetFrame = this._lastTargetFrame;
+			var targetFrameChanged = checkTargetFrameChanged();
+			var targetChanged = event.target !== this._lastTarget;
+
+			if (targetFrameChanged || targetChanged) {
+				this._record('end', null, 1);
+
+				if (targetFrameChanged) {
+					if (lastTargetFrame.length) {
+						this._record('switchToFrame', [ null ]);
+					}
+					event.targetFrame.forEach(function (frameId) {
+						this._record('switchToFrame', [ frameId ]);
+					}, this);
+					this._lastTargetFrame = event.targetFrame;
+				}
+
+				if (event.target) {
+					this._record('findByXpath', [ event.target ]);
+				}
+
+				this._lastTarget = event.target;
+			}
 		},
 
 		_renderScriptTree: function () {
