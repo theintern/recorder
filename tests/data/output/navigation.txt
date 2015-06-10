@@ -4,6 +4,10 @@ define(function (require) {
 		tdd.test('Test 1', function () {
 			return this.remote
 				.get('http://example.com')
+				.findByXpath('target')
+					.moveMouseTo(12, 23)
+					.click()
+					.end()
 				.reload()
 				.get('http://example.com')
 				.get('http://example.com/#test')

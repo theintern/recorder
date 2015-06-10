@@ -12,6 +12,7 @@ define(function (require) {
 		click: require('dojo/text!../data/output/click.txt'),
 		doubleClick: require('dojo/text!../data/output/doubleClick.txt'),
 		drag: require('dojo/text!../data/output/drag.txt'),
+		frame: require('dojo/text!../data/output/frame.txt'),
 		mouseMove: require('dojo/text!../data/output/mouseMove.txt'),
 		navigation: require('dojo/text!../data/output/navigation.txt')
 	};
@@ -313,6 +314,11 @@ define(function (require) {
 				recorder.setTabId(1);
 				recorder.toggleState();
 
+				// to test target reset on navigation
+				recorder.recordEvent(createEvent({ type: 'mousedown', buttons: 1 }));
+				recorder.recordEvent(createEvent({ type: 'mouseup' }));
+				recorder.recordEvent(createEvent({ type: 'click' }));
+
 				// should be ignored due to tab mismatch
 				chrome.webNavigation.onCommitted.emit({
 					tabId: 2,
@@ -431,6 +437,18 @@ define(function (require) {
 					recorder.recordEvent(createEvent({ type: 'mouseup', elementX: 20, elementY: 20 }));
 					recorder.recordEvent(createEvent({ type: 'click' }));
 					assertScriptValue(devToolsPort, testData.drag);
+				},
+
+				'frame': function () {
+					recorder.recordEvent(createEvent({ type: 'mousemove', targetFrame: [ 1, 2 ] }));
+					recorder.recordEvent(createEvent({ type: 'mousedown', targetFrame: [ 1, 2 ], buttons: 1 }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', targetFrame: [ 1, 2 ] }));
+					recorder.recordEvent(createEvent({ type: 'click', targetFrame: [ 1, 2 ] }));
+					recorder.recordEvent(createEvent({ type: 'mousemove', targetFrame: [ 1, 3 ] }));
+					recorder.recordEvent(createEvent({ type: 'mousedown', targetFrame: [ 1, 3 ], buttons: 1 }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', targetFrame: [ 1, 3 ] }));
+					recorder.recordEvent(createEvent({ type: 'click', targetFrame: [ 1, 3 ] }));
+					assertScriptValue(devToolsPort, testData.frame);
 				}
 			},
 
