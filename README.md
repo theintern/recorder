@@ -45,3 +45,13 @@ Chrome restricts which extension APIs are available to Dev Tools scripts, so the
 ![Intern UI](https://theintern.github.io/recorder/images/architecture.svg)
 
 The recorder itself is maintained in the background script, which has access to the full Chrome extension API. The user interface is displayed from the Dev Tools page script and communicates with the recorder through a `chrome.runtime` messaging port. To intercept page interaction, the background script injects an event forwarding script into the browser tab that listens for various DOM events and passes them to the recorder through a second `chrome.runtime` messaging port.
+
+## Special thanks
+
+A very special thanks to [SITA](http://www.sita.aero/) for sponsoring work on the first release of the Intern Recorder.
+
+## Licensing
+
+Intern Recorder is a Dojo Foundation project offered under the [New BSD](https://github.com/theintern/recorder/blob/master/LICENSE) license.
+
+© [SitePen, Inc.](http://sitepen.com/) and its [contributors](https://github.com/theintern/recorder/graphs/contributors)
