@@ -500,10 +500,6 @@
 		},
 
 		_record: function (method, args, indent) {
-			if (!this._currentTest) {
-				throw new Error('Recording command for a test, but there is no current test');
-			}
-
 			var text = '\n\t\t\t\t' + extraIndent(indent) + '.' + method + '(';
 
 			if (args && args.length) {
@@ -512,10 +508,7 @@
 						text += ', ';
 					}
 
-					if (typeof arg === 'function') {
-						text += arg.toString();
-					}
-					else if (typeof arg === 'string') {
+					if (typeof arg === 'string') {
 						text += '\'' + arg.replace(/'/g, '\\\'') + '\'';
 					}
 					else {
