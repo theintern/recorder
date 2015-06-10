@@ -1,0 +1,10 @@
+define(function (require) {
+	var tdd = require('intern!tdd');
+	tdd.suite('recorder-generated suite', function () {
+		tdd.test('Test 1', function () {
+			return this.remote
+				.get('http://example.com')
+				.pressKeys('');
+		});
+	});
+});

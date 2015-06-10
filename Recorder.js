@@ -7,6 +7,28 @@
 		}
 	};
 
+	function createCommandText(method, args, indent) {
+		var text = '\n\t\t\t\t' + extraIndent(indent) + '.' + method + '(';
+
+		if (args && args.length) {
+			args.forEach(function (arg, index) {
+				if (index > 0) {
+					text += ', ';
+				}
+
+				if (typeof arg === 'string') {
+					text += '\'' + arg.replace(/'/g, '\\\'') + '\'';
+				}
+				else {
+					text += String(arg);
+				}
+			});
+		}
+
+		text += ')';
+		return text;
+	}
+
 	function extraIndent(num) {
 		var indent = '';
 		while (num-- > 0) {
@@ -106,7 +128,7 @@
 			'U+002F': '\uE029'
 		};
 
-		return function (keyIdentifier, keyLocation) {
+		return function (keyIdentifier, keyLocation, isUpperCase) {
 			if (keyLocation === /* numpad */ 3 && NUMPAD_KEY_MAP[keyIdentifier]) {
 				return NUMPAD_KEY_MAP[keyIdentifier];
 			}
@@ -115,15 +137,14 @@
 				return KEY_MAP[keyIdentifier];
 			}
 
-			var char = keyIdentifier.slice(0, 2) === 'U+' ?
-				String.fromCharCode(Number('0x' + keyIdentifier.slice(2))) :
-				null;
-
-			if (char) {
-				return char;
+			/* istanbul ignore else: should be impossible */
+			if (keyIdentifier.slice(0, 2) === 'U+') {
+				var char = String.fromCharCode(Number('0x' + keyIdentifier.slice(2)));
+				return isUpperCase ? char.toUpperCase() : char.toLowerCase();
 			}
-
-			throw new Error('Cannot identify key "' + keyIdentifier + '"');
+			else {
+				throw new Error('Cannot identify key "' + keyIdentifier + '"');
+			}
 		};
 	})();
 
@@ -224,6 +245,20 @@
 			}
 		},
 
+		_eraseKeys: function (numKeys) {
+			var lastCommand = this._currentTest.commands[this._currentTest.commands.length - 1];
+
+			if (numKeys === lastCommand.args[0].length) {
+				this._eraseLast(1);
+				return;
+			}
+
+			lastCommand.args[0] = lastCommand.args[0].slice(0, -numKeys);
+			lastCommand.text = createCommandText(lastCommand.method, lastCommand.args);
+			lastCommand.end = lastCommand.start + lastCommand.text.length;
+			this._renderScriptTree();
+		},
+
 		_eraseLast: function (numCommands) {
 			var commands = this._currentTest.commands;
 			commands.splice(commands.length - numCommands, numCommands);
@@ -258,16 +293,10 @@
 			for (var hotkeyId in this.hotkeys) {
 				var hotkey = this.hotkeys[hotkeyId];
 
-				var hasKeys = false;
 				for (var key in hotkey) {
-					hasKeys = true;
 					if (event[key] !== hotkey[key]) {
 						continue nextKey;
 					}
-				}
-
-				if (!hasKeys) {
-					continue;
 				}
 
 				if (!this.recording && hotkeyId !== 'toggleState') {
@@ -276,7 +305,7 @@
 
 				ignore(hotkey.keyIdentifier);
 
-				var numCommandsToErase = 0;
+				var numKeysToErase = 0;
 
 				[
 					[ 'altKey', 'Alt' ],
@@ -286,14 +315,16 @@
 				].forEach(function (key) {
 					if (hotkey[key[0]] && this._currentModifiers[key[1]]) {
 						ignore(key[1]);
-						++numCommandsToErase;
 						delete this._currentModifiers[key[1]];
+						++numKeysToErase;
 					}
 				}, this);
 
+				this._eraseKeys(numKeysToErase);
+
 				var method = hotkeyId;
-				this._eraseLast(numCommandsToErase);
 				this[method]();
+
 				return true;
 			}
 
@@ -454,12 +485,16 @@
 				case 'click':
 					// mousedown (2), mouseup (2)
 					this._eraseLast(4);
+					// moveMouseTo is recorded on click and dblclick instead of using the already-recorded moveMouseTo
+					// from the previous mousedown/mouseup because there may be a slight difference in position due to
+					// hysteresis
 					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
 					this._record('clickMouseButton', [ event.button ], 1);
 					break;
 				case 'dblclick':
-					// click (1), mousedown (2), mouseup (2)
-					this._eraseLast(5);
+					// click (2), click (2)
+					this._eraseLast(4);
+					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
 					this._record('doubleClick', null, 1);
 					break;
 				case 'keydown':
@@ -467,7 +502,7 @@
 						this._currentModifiers[event.keyIdentifier] = true;
 					}
 
-					this._record('pressKeys', [ getSeleniumKey(event.keyIdentifier, event.location) ]);
+					this._recordKey(event);
 					break;
 				case 'keyup':
 					if (this._ignoreKeyups[event.keyIdentifier]) {
@@ -478,7 +513,7 @@
 
 					if (isModifierKey(event.keyIdentifier)) {
 						delete this._currentModifiers[event.keyIdentifier];
-						this._record('pressKeys', [ getSeleniumKey(event.keyIdentifier, event.location) ]);
+						this._recordKey(event);
 					}
 					break;
 				case 'mousedown':
@@ -500,26 +535,9 @@
 		},
 
 		_record: function (method, args, indent) {
-			var text = '\n\t\t\t\t' + extraIndent(indent) + '.' + method + '(';
-
-			if (args && args.length) {
-				args.forEach(function (arg, index) {
-					if (index > 0) {
-						text += ', ';
-					}
-
-					if (typeof arg === 'string') {
-						text += '\'' + arg.replace(/'/g, '\\\'') + '\'';
-					}
-					else {
-						text += String(arg);
-					}
-				});
-			}
-
-			text += ')';
-
 			var commands = this._currentTest.commands;
+
+			var text = createCommandText(method, args, indent);
 			var start = commands.length ? commands[commands.length - 1].end : this._currentTest.start;
 
 			commands.push({
@@ -531,6 +549,47 @@
 			});
 
 			this._renderScriptTree();
+		},
+
+		_recordKey: function (event) {
+			function suppressesShift(key) {
+				var code = key.charCodeAt(0);
+				if (code >= 0xE000 && code <= 0xF8FF) {
+					return false;
+				}
+
+				return key.toUpperCase() === key;
+			}
+
+			var key = getSeleniumKey(event.keyIdentifier, event.location, event.shiftKey);
+
+			var commands = this._currentTest.commands;
+			var lastCommand = commands[commands.length - 1];
+
+			if (lastCommand && lastCommand.method === 'pressKeys') {
+				var shiftKey = getSeleniumKey('Shift', 0, true);
+				var args = lastCommand.args;
+				var lastKey = args[0].charAt(args[0].length - 1);
+
+				// if the previous character was a Shift to start typing this uppercase letter, remove the Shift
+				// from the output since it is encoded in our use of an uppercase letter
+				if (suppressesShift(key) && lastKey === shiftKey) {
+					args[0] = args[0].slice(0, -1);
+				}
+				// if the previous character was an uppercase letter and this key is a Shift release, do not add
+				// the Shift release; it will be encoded in the next letter
+				else if (event.type === 'keyup' && key === shiftKey && suppressesShift(lastKey)) {
+					return;
+				}
+
+				args[0] += key;
+
+				lastCommand.text = createCommandText(lastCommand.method, args);
+				lastCommand.end = lastCommand.start + lastCommand.text.length;
+			}
+			else {
+				this._record('pressKeys', [ key ]);
+			}
 		},
 
 		_recordTarget: function (event) {
