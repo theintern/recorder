@@ -1,6 +1,12 @@
 (typeof define === 'function' && define.amd ? define : /* istanbul ignore next */ function (factory) {
 	this.Recorder = factory();
 })(function () {
+	var FUNCTION_OBJECT = {
+		toString: function () {
+			return 'function () {}';
+		}
+	};
+
 	function extraIndent(num) {
 		var indent = '';
 		while (num-- > 0) {
@@ -386,7 +392,7 @@
 				return;
 			}
 
-			this._record('then', [ function () {} ]);
+			this._record('then', [ FUNCTION_OBJECT ]);
 			this._renderScriptTree();
 		},
 
