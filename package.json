@@ -1,0 +1,19 @@
+{
+	"name": "intern-recorder",
+	"version": "1.0.0-pre",
+	"description": "Intern Recorder. Records your functional tests from Chrome Dev Tools so you don’t have to!",
+	"license": "BSD-3-Clause",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/theintern/intern.git"
+	},
+	"dependencies": {
+		"dojo": "2.0.0-alpha.6"
+	},
+	"devDependencies": {
+		"intern": "3.0.0-rc.1"
+	},
+	"bugs": "https://github.com/theintern/intern/issues",
+	"keywords": [ "javascript", "test", "unit", "testing", "ci", "continuous integration", "bdd", "tdd", "xunit", "istanbul", "chai", "dojo", "toolkit", "selenium", "sauce labs", "code coverage", "recorder", "functional", "webdriver" ],
+	"homepage": "http://theintern.io/"
+}

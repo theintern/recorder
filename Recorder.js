@@ -1,4 +1,6 @@
-var Recorder = (function () {
+(typeof define === 'function' && define.amd ? define : /* istanbul ignore next */ function (factory) {
+	this.Recorder = factory();
+})(function () {
 	function extraIndent(num) {
 		var indent = '';
 		while (num-- > 0) {
@@ -141,7 +143,8 @@ var Recorder = (function () {
 		].join('\n'),
 		suiteClose: [
 			'	});',
-			'});'
+			'});',
+			''
 		].join('\n'),
 		testOpen: [
 			'		tdd.test(\'$NAME\', function () {',
@@ -155,8 +158,12 @@ var Recorder = (function () {
 	};
 
 	function Recorder(chrome, storage) {
+		if (chrome == null) {
+			throw new Error('Chrome API must be provided to recorder');
+		}
+
 		if (storage == null) {
-			storage = localStorage;
+			throw new Error('Storage API must be provided to recorder');
 		}
 
 		this.chrome = chrome;
@@ -321,7 +328,8 @@ var Recorder = (function () {
 						self._port.send('setHotkey', [ hotkeyId, self.hotkeys[hotkeyId] ]);
 					}
 
-					self._port.send('setScript', self._script);
+					self._port.send('setScript', [ self._script ]);
+					self._port.send('setRecording', [ self.recording ]);
 				}
 			});
 
@@ -486,6 +494,10 @@ var Recorder = (function () {
 		},
 
 		_record: function (method, args, indent) {
+			if (!this._currentTest) {
+				throw new Error('Recording command for a test, but there is no current test');
+			}
+
 			var text = '\n\t\t\t\t' + extraIndent(indent) + '.' + method + '(';
 
 			if (args && args.length) {
@@ -507,10 +519,6 @@ var Recorder = (function () {
 			}
 
 			text += ')';
-
-			if (!this._currentTest) {
-				throw new Error('Recording command for a test, but there is no current test');
-			}
 
 			var commands = this._currentTest.commands;
 			var start = commands.length ? commands[commands.length - 1].end : this._currentTest.start;
@@ -550,7 +558,9 @@ var Recorder = (function () {
 			var targetChanged = event.target !== this._lastTarget;
 
 			if (targetFrameChanged || targetChanged) {
-				this._record('end', null, 1);
+				if (this._lastTarget) {
+					this._record('end', null, 1);
+				}
 
 				if (targetFrameChanged) {
 					if (lastTargetFrame.length) {
@@ -632,4 +642,4 @@ var Recorder = (function () {
 	};
 
 	return Recorder;
-})();
+});
