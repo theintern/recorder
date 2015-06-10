@@ -1,0 +1,13 @@
+define(function (require) {
+	var tdd = require('intern!tdd');
+	tdd.suite('recorder-generated suite', function () {
+		tdd.test('Test 1', function () {
+			return this.remote
+				.get('http://example.com')
+				.reload()
+				.get('http://example.com')
+				.get('http://example.com/#test')
+				.get('http://2.example');
+		});
+	});
+});

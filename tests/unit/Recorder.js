@@ -8,8 +8,12 @@ define(function (require) {
 
 	var testData = {
 		blank: require('dojo/text!../data/output/blank.txt'),
+		callback: require('dojo/text!../data/output/callback.txt'),
 		click: require('dojo/text!../data/output/click.txt'),
-		dblclick: require('dojo/text!../data/output/dblclick.txt')
+		doubleClick: require('dojo/text!../data/output/doubleClick.txt'),
+		drag: require('dojo/text!../data/output/drag.txt'),
+		mouseMove: require('dojo/text!../data/output/mouseMove.txt'),
+		navigation: require('dojo/text!../data/output/navigation.txt')
 	};
 
 	function assertScriptValue(port, value, assertMessage) {
@@ -244,33 +248,138 @@ define(function (require) {
 				assertScriptValue(devToolsPort, testData.blank);
 			},
 
-			'#hotkeys': {
-				'defaults': function () {
-					assert.deepEqual(
-						recorder.hotkeys,
-						recorder._getDefaultHotkeys(),
-						'When no hotkey data is in storage, use predefined defaults'
-					);
+			'#hotkeys': function () {
+				assert.deepEqual(
+					recorder.hotkeys,
+					recorder._getDefaultHotkeys(),
+					'When no hotkey data is in storage, use predefined defaults'
+				);
 
-					var prepopulatedStorage = mockStorageApi({
-						'intern.hotkeys': '{"foo":"foo"}'
-					});
+				var prepopulatedStorage = mockStorageApi({
+					'intern.hotkeys': '{"foo":"foo"}'
+				});
 
-					var prepopulatedRecorder = new Recorder(chrome, prepopulatedStorage);
-					assert.deepEqual(
-						prepopulatedRecorder.hotkeys,
-						{ foo: 'foo' },
-						'When hotkey data is in storage, use data from storage'
-					);
-				}
+				var prepopulatedRecorder = new Recorder(chrome, prepopulatedStorage);
+				assert.deepEqual(
+					prepopulatedRecorder.hotkeys,
+					{ foo: 'foo' },
+					'When hotkey data is in storage, use data from storage'
+				);
 			},
 
 			'#insertCallback': function () {
-				this.skip('TODO');
+				recorder.setTabId(1);
+
+				var expected = getLastScriptValue(devToolsPort);
+				recorder.insertCallback();
+				assert.strictEqual(
+					getLastScriptValue(devToolsPort),
+					expected,
+					'insertCallback should be a no-op if not recording'
+				);
+
+				recorder.toggleState();
+				recorder.insertCallback();
+				assertScriptValue(devToolsPort, testData.callback);
 			},
 
 			'#insertMouseMove': function () {
-				this.skip('TODO');
+				recorder.setTabId(1);
+
+				var expected = getLastScriptValue(devToolsPort);
+				recorder.insertMouseMove();
+				assert.strictEqual(
+					getLastScriptValue(devToolsPort),
+					expected,
+					'insertMouseMove should be a no-op if not recording'
+				);
+
+				recorder.toggleState();
+
+				expected = getLastScriptValue(devToolsPort);
+				recorder.insertMouseMove();
+				assert.strictEqual(
+					getLastScriptValue(devToolsPort),
+					expected,
+					'insertMouseMove should be a no-op if there was no previous mouse move'
+				);
+
+				recorder.recordEvent(createEvent({ type: 'mousemove' }));
+				recorder.insertMouseMove();
+				assertScriptValue(devToolsPort, testData.mouseMove);
+			},
+
+			'navigation': function () {
+				recorder.setTabId(1);
+				recorder.toggleState();
+
+				// should be ignored due to tab mismatch
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 2,
+					frameId: 0,
+					transitionType: 'reload',
+					transitionQualifiers: [ 'from_address_bar' ],
+					url: 'http://example.com'
+				});
+
+				// should be ignored due to frameId mismatch
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 1,
+					frameId: 1,
+					transitionType: 'reload',
+					transitionQualifiers: [ 'from_address_bar' ],
+					url: 'http://example.com'
+				});
+
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 1,
+					frameId: 0,
+					transitionType: 'reload',
+					transitionQualifiers: [ 'from_address_bar' ],
+					url: 'http://example.com'
+				});
+
+				// should be ignored due to transitionType/transitionQualifiers mismatch
+				chrome.webNavigation.onReferenceFragmentUpdated.emit({
+					tabId: 1,
+					frameId: 0,
+					transitionType: 'link',
+					transitionQualifiers: [],
+					url: 'http://example.com/#test'
+				});
+
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 1,
+					frameId: 0,
+					transitionType: 'typed',
+					transitionQualifiers: [ 'forward_back', 'from_address_bar' ],
+					url: 'http://example.com'
+				});
+
+				chrome.webNavigation.onReferenceFragmentUpdated.emit({
+					tabId: 1,
+					frameId: 0,
+					transitionType: 'link',
+					transitionQualifiers: [ 'forward_back' ],
+					url: 'http://example.com/#test'
+				});
+
+				chrome.webNavigation.onHistoryStateUpdated.emit({
+					tabId: 1,
+					frameId: 0,
+					transitionType: 'auto_subframe',
+					transitionQualifiers: [],
+					url: 'http://example.com'
+				});
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 1,
+					frameId: 0,
+					transitionType: 'typed',
+					transitionQualifiers: [ 'from_address_bar' ],
+					url: 'http://2.example'
+				});
+
+				assertScriptValue(devToolsPort, testData.navigation);
 			},
 
 			'#newTest': {
@@ -287,6 +396,14 @@ define(function (require) {
 					recorder.toggleState();
 				},
 
+				'not recording': function () {
+					recorder.toggleState();
+					assert.isFalse(recorder.recording);
+
+					recorder.recordEvent(createEvent({ type: 'mousemove' }));
+					assertScriptValue(devToolsPort, testData.blank);
+				},
+
 				'click': function () {
 					recorder.recordEvent(createEvent({ type: 'mousemove' }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', buttons: 1 }));
@@ -295,7 +412,7 @@ define(function (require) {
 					assertScriptValue(devToolsPort, testData.click);
 				},
 
-				'dblclick': function () {
+				'double click': function () {
 					recorder.recordEvent(createEvent({ type: 'mousemove' }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', buttons: 1 }));
 					recorder.recordEvent(createEvent({ type: 'mouseup' }));
@@ -304,7 +421,16 @@ define(function (require) {
 					recorder.recordEvent(createEvent({ type: 'mouseup' }));
 					recorder.recordEvent(createEvent({ type: 'click' }));
 					recorder.recordEvent(createEvent({ type: 'dblclick' }));
-					assertScriptValue(devToolsPort, testData.dblclick);
+					assertScriptValue(devToolsPort, testData.doubleClick);
+				},
+
+				'drag': function () {
+					recorder.recordEvent(createEvent({ type: 'mousemove', elementX: 0, elementY: 0 }));
+					recorder.recordEvent(createEvent({ type: 'mousedown', elementX: 0, elementY: 0, buttons: 1 }));
+					recorder.recordEvent(createEvent({ type: 'mousemove', elementX: 20, elementY: 20, buttons: 1 }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', elementX: 20, elementY: 20 }));
+					recorder.recordEvent(createEvent({ type: 'click' }));
+					assertScriptValue(devToolsPort, testData.drag);
 				}
 			},
 
