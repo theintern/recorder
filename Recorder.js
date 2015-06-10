@@ -455,7 +455,7 @@
 					// mousedown (2), mouseup (2)
 					this._eraseLast(4);
 					this._record('moveMouseTo', [ event.elementX, event.elementY ], 1);
-					this._record('click', null, 1);
+					this._record('clickMouseButton', [ event.button ], 1);
 					break;
 				case 'dblclick':
 					// click (1), mousedown (2), mouseup (2)

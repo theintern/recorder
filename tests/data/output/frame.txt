@@ -8,14 +8,14 @@ define(function (require) {
 				.switchToFrame(2)
 				.findByXpath('target')
 					.moveMouseTo(12, 23)
-					.click()
+					.clickMouseButton(0)
 					.end()
 				.switchToFrame(null)
 				.switchToFrame(1)
 				.switchToFrame(3)
 				.findByXpath('target')
 					.moveMouseTo(12, 23)
-					.click();
+					.clickMouseButton(0);
 		});
 	});
 });
