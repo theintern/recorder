@@ -1,20 +1,20 @@
 {
 	"manifest_version": 2,
 	"name": "Intern Recorder",
-	"description": "Creates functional tests based on interaction with a site from your browser.",
+	"description": "Creates functional tests for Intern based on interaction with a site from your browser.",
 	"version": "1.0.0",
 	"minimum_chrome_version": "26.0",
-	"devtools_page": "devtools.html",
+	"devtools_page": "lib/devtools.html",
 	"background": {
-		"scripts": [ "Recorder.js", "background.js" ],
+		"scripts": [ "lib/Recorder.js", "lib/background.js" ],
 		"persistent": false
 	},
 	"icons": {
-		"16": "manifestIcons/logo_16.png",
-		"32": "manifestIcons/logo_32.png",
-		"48": "manifestIcons/logo_48.png",
-		"64": "manifestIcons/logo_64.png",
-		"128": "manifestIcons/logo_128.png"
+		"16": "resources/manifestIcons/logo_16.png",
+		"32": "resources/manifestIcons/logo_32.png",
+		"48": "resources/manifestIcons/logo_48.png",
+		"64": "resources/manifestIcons/logo_64.png",
+		"128": "resources/manifestIcons/logo_128.png"
 	},
 	"permissions": [
 		"downloads",

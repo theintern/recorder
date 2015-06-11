@@ -6,7 +6,7 @@ define(function (require) {
 	var mockChromeApi = require('../support/mockChromeApi');
 	var mockDomApi = require('../support/mockDomApi');
 	var registerSuite = require('intern!object');
-	var RecorderProxy = require('RecorderProxy');
+	var RecorderProxy = require('lib/RecorderProxy');
 
 	var hotkeyIds = [ 'insertCallback', 'insertMouseMove', 'toggleState' ];
 
@@ -176,13 +176,13 @@ define(function (require) {
 				recorderProxy.setRecording(true);
 				assert.isTrue(recorderProxy.recording);
 				assert.deepEqual(recordButton.update.calls, [
-					[ 'statusBarIcons/record_on.png' ]
+					[ 'resources/statusBarIcons/record_on.png' ]
 				]);
 				recordButton.update.clear();
 				recorderProxy.setRecording(false);
 				assert.isFalse(recorderProxy.recording);
 				assert.deepEqual(recordButton.update.calls, [
-					[ 'statusBarIcons/record_off.png' ]
+					[ 'resources/statusBarIcons/record_off.png' ]
 				]);
 			},
 

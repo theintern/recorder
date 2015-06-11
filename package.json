@@ -1,16 +1,14 @@
 {
 	"name": "intern-recorder",
 	"version": "1.0.0-pre",
-	"description": "Intern Recorder. Records your functional tests from Chrome Dev Tools so you don’t have to!",
+	"description": "Intern Recorder. Creates functional tests for Intern based on interaction with a site from your browser.",
 	"license": "BSD-3-Clause",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/theintern/intern.git"
-	},
-	"dependencies": {
-		"dojo": "2.0.0-alpha.6"
+		"url": "https://github.com/theintern/recorder.git"
 	},
 	"devDependencies": {
+		"dojo": "2.0.0-alpha.6",
 		"intern": "3.0.0-rc.1"
 	},
 	"bugs": "https://github.com/theintern/intern/issues",

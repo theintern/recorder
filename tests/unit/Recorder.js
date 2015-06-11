@@ -5,7 +5,7 @@ define(function (require) {
 	var mockChromeApi = require('../support/mockChromeApi');
 	var mockStorageApi = require('../support/mockStorageApi');
 	var registerSuite = require('intern!object');
-	var Recorder = require('Recorder');
+	var Recorder = require('lib/Recorder');
 
 	var testData = {
 		blank: require('dojo/text!../data/output/blank.txt'),
@@ -657,7 +657,7 @@ define(function (require) {
 					recorder.toggleState();
 					assert.isTrue(recorder.recording);
 					assert.deepEqual(chrome.tabs.executeScript.calls, [
-						[ 1, { file: 'eventProxy.js', allFrames: true } ]
+						[ 1, { file: 'lib/eventProxy.js', allFrames: true } ]
 					], 'Content scripts should be injected when turning on recording');
 					assert.deepEqual(recorder.newTest.calls, [ [] ],
 						'New test should automatically be created when toggling recording for the first time');
@@ -665,7 +665,7 @@ define(function (require) {
 					recorder.toggleState();
 					assert.isFalse(recorder.recording);
 					assert.deepEqual(chrome.tabs.executeScript.calls, [
-						[ 1, { file: 'eventProxy.js', allFrames: true } ]
+						[ 1, { file: 'lib/eventProxy.js', allFrames: true } ]
 					], 'Content scripts should not be injected when turning off recording');
 
 					recorder.toggleState();

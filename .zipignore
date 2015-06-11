@@ -1,0 +1,13 @@
+html-report
+html-report/*
+node_modules
+node_modules/*
+support
+support/*
+tests
+tests/*
+.travis.yml
+.git
+.git/*
+.gitignore
+.zipignore
