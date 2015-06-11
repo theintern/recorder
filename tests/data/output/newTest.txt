@@ -1,0 +1,25 @@
+define(function (require) {
+	var tdd = require('intern!tdd');
+	tdd.suite('recorder-generated suite', function () {
+		tdd.test('Test 1', function () {
+			return this.remote
+				.get('http://example.com')
+				.then(function () {});
+		});
+		tdd.test('Test 2', function () {
+			return this.remote
+				.get('http://example.com')
+				.switchToFrame(0)
+				.findByXpath('target')
+					.moveMouseTo(12, 23)
+					.clickMouseButton(0)
+					.end()
+				.switchToFrame(null);
+		});
+		tdd.test('Test 3', function () {
+			return this.remote
+				.get('http://example.com')
+				.then(function () {});
+		});
+	});
+});
