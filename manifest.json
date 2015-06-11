@@ -9,6 +9,13 @@
 		"scripts": [ "Recorder.js", "background.js" ],
 		"persistent": false
 	},
+	"icons": {
+		"16": "manifestIcons/logo_16.png",
+		"32": "manifestIcons/logo_32.png",
+		"48": "manifestIcons/logo_48.png",
+		"64": "manifestIcons/logo_64.png",
+		"128": "manifestIcons/logo_128.png"
+	},
 	"permissions": [
 		"downloads",
 		"http://*/*",
