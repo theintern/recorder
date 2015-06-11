@@ -80,33 +80,46 @@ if [ "$VERSION" == "" ]; then
 		# We'll be creating a new minor release branch for this version for any future patch releases
 		MAKE_BRANCH="${PRE_VERSION[0]}.${PRE_VERSION[1]}"
 		BRANCH_VERSION="${PRE_VERSION[0]}.${PRE_VERSION[1]}.$((PRE_VERSION[2] + 1))-pre"
+		MANIFEST_BRANCH_VERSION="${PRE_VERSION[0]}.${PRE_VERSION[1]}.$((PRE_VERSION[2] + 1)).0"
 
 		# The next release is usually going to be a minor release; if the next version is to be a major release,
 		# the package version will need to be manually updated in Git before release
 		PRE_VERSION="${PRE_VERSION[0]}.$((PRE_VERSION[1] + 1)).0-pre"
+		MANIFEST_PRE_VERSION="${PRE_VERSION[0]}.$((PRE_VERSION[1] + 1)).0.0"
 
 	# This is a new patch release
 	else
 		# Patch releases do not get a branch
 		MAKE_BRANCH=
 		BRANCH_VERSION=
+		MANIFEST_BRANCH_VERSION=
 
 		# The next release version will always be another patch version
 		PRE_VERSION="${PRE_VERSION[0]}.${PRE_VERSION[1]}.$((PRE_VERSION[2] + 1))-pre"
+		MANIFEST_PRE_VERSION="${PRE_VERSION[0]}.${PRE_VERSION[1]}.$((PRE_VERSION[2] + 1)).0"
 	fi
 else
 	MAKE_BRANCH=
 	BRANCH_VERSION=
+	MANIFEST_BRANCH_VERSION=
 	PRE_VERSION=$(grep -o '"version": "[^"]*"' package.json | grep -o "$MATCH_VERSION")
 	PRE_VERSION="$PRE_VERSION-pre"
-fi
 
-MANIFEST_VERSION=$(echo "$VERSION" | grep -o "$MATCH_VERSION")
-MANIFEST_PRE_VERSION=$(echo "$PRE_VERSION" | grep -o "$MATCH_VERSION")
-if [ "$BRANCH_VERSION" == "" ]; then
-	MANIFEST_BRANCH_VERSION=
-else
-	MANIFEST_BRANCH_VERSION=$(echo "$BRANCH_VERSION" | grep -o "$MATCH_VERSION")
+	MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' manifest.json | grep -o "$MATCH_VERSION")
+
+	# Convert the version number to an array that we can use to generate the next release version number
+	OLDIFS=$IFS
+	IFS="."
+	MANIFEST_PRE_VERSION=($MANIFEST_VERSION)
+	IFS=$OLDIFS
+
+	# Manifest needs the 4th version number incremented on each pre-release. The currently committed version in
+	# manifest.json is used for this release, then it is incremented immediately for the next pre-release (or final
+	# release). e.g.:
+	# 1.0.0-alpha.1 -> 1.0.0.0, pre is 1.0.0.1
+	# 1.0.0-alpha.2 -> 1.0.0.1, pre is 1.0.0.2
+	# 1.0.0 -> 1.0.0.2, pre is 1.0.1.0
+	MANIFEST_PRE_VERSION="${MANIFEST_PRE_VERSION[0]}.${MANIFEST_PRE_VERSION[1]}.${MANIFEST_PRE_VERSION[2]}.$((MANIFEST_PRE_VERSION[3] + 1))"
 fi
 
 TAG_VERSION=$VERSION
@@ -118,7 +131,8 @@ RELEASE_TAG="$TAG_VERSION"
 # $PRE_VERSION is the next pre-release version of Intern that will be set on the original branch after tagging
 # $MAKE_BRANCH is the name of the new minor release branch that should be created (if this is not a patch release)
 # $BRANCH_VERSION is the pre-release version of Intern that will be set on the minor release branch
-# $MANIFEST_* are the same versions as the unprefixed ones, except without a semver prerelease suffix
+# $MANIFEST_* are the same versions as the unprefixed ones, except using a monotonically increasing fourth version
+# number instead of a semver prerelease suffix
 
 # Something is messed up and this release has already happened
 if [ $(git tag |grep -c "^$TAG_VERSION$") -gt 0 ]; then
@@ -128,9 +142,7 @@ fi
 
 # Set the package version to release version
 sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
-
-# Set the manifest version to release version compatible with manifest
-sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$MANIFEST_VERSION\"/" package.json
+sed -i -e "s/\"version_name\": \"[^\"]*\"/\"version_name\": \"$VERSION\"/" manifest.json
 
 # Fix the Git-based dependencies to specific commit IDs
 echo -e "\nFixing dependency commits...\n"
@@ -165,6 +177,7 @@ git reset package.json
 # Set the package version to next pre-release version
 sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$PRE_VERSION\"/" package.json
 sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$MANIFEST_PRE_VERSION\"/" manifest.json
+sed -i -e "s/\"version_name\": \"[^\"]*\"/\"version_name\": \"$PRE_VERSION\"/" manifest.json
 
 # Commit the pre-release to Git
 git commit -m "Updating source version to $PRE_VERSION" package.json manifest.json
@@ -177,6 +190,7 @@ if [ "$MAKE_BRANCH" != "" ]; then
 	# Set the package version to the next patch pre-release version
 	sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$BRANCH_VERSION\"/" package.json
 	sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$MANIFEST_BRANCH_VERSION\"/" manifest.json
+	sed -i -e "s/\"version_name\": \"[^\"]*\"/\"version_name\": \"$BRANCH_VERSION\"/" manifest.json
 
 	# Commit the pre-release to Git
 	git commit -m "Updating source version to $BRANCH_VERSION" package.json manifest.json
