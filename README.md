@@ -1,4 +1,4 @@
-# Intern Recorder
+# Intern Recorder ![CI status](https://travis-ci.org/theintern/recorder.svg)
 
 **This code is a work in progress and is not ready for use. Check back at the end of June!**
 

@@ -15,5 +15,8 @@
 	},
 	"bugs": "https://github.com/theintern/intern/issues",
 	"keywords": [ "javascript", "test", "unit", "testing", "ci", "continuous integration", "bdd", "tdd", "xunit", "istanbul", "chai", "dojo", "toolkit", "selenium", "sauce labs", "code coverage", "recorder", "functional", "webdriver" ],
-	"homepage": "http://theintern.io/"
+	"homepage": "http://theintern.io/",
+	"scripts": {
+		"test": "intern-client config=tests/intern"
+	}
 }
