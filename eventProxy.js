@@ -46,6 +46,7 @@ function getElementXPath(element) {
 	}
 
 	var EVENT_TYPES = 'click dblclick mousedown mouseup mousemove keydown keyup'.split(' ');
+	var lastMouseDown = {};
 
 	var port = chrome.runtime.connect(chrome.runtime.id, { name: 'eventProxy' });
 	port.onDisconnect.addListener(function disconnect() {
@@ -74,9 +75,22 @@ function getElementXPath(element) {
 	}
 
 	function sendEvent(event) {
+		if (event.type === 'mousedown') {
+			lastMouseDown[event.button] = event;
+		}
+
+		if (
+			event.type === 'click' && (
+				Math.abs(event.clientX - lastMouseDown[event.button].clientX) > 5 ||
+				Math.abs(event.clientY - lastMouseDown[event.button].clientY > 5)
+			)
+		) {
+			return;
+		}
+
 		var rect = event.target.getBoundingClientRect();
 
-		var detail = {
+		send({
 			altKey: event.altKey,
 			button: event.button,
 			buttons: event.buttons,
@@ -92,9 +106,7 @@ function getElementXPath(element) {
 			target: getElementXPath(event.target),
 			targetFrame: [],
 			type: event.type
-		};
-
-		send(detail);
+		});
 	}
 
 	function passEvent(event) {

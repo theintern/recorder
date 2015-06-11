@@ -16,6 +16,7 @@ define(function (require) {
 		hotkey: require('dojo/text!../data/output/hotkey.txt'),
 		mouseMove: require('dojo/text!../data/output/mouseMove.txt'),
 		navigation: require('dojo/text!../data/output/navigation.txt'),
+		newTest: require('dojo/text!../data/output/newTest.txt'),
 		type: require('dojo/text!../data/output/type.txt')
 	};
 
@@ -396,8 +397,19 @@ define(function (require) {
 						recorder.newTest();
 					}, 'missing tabId');
 				},
-				'': function () {
-					this.skip('TODO');
+
+				'multiple tests': function () {
+					recorder.setTabId(1);
+					recorder.toggleState();
+					recorder.insertCallback();
+					recorder.newTest();
+					recorder.recordEvent(createEvent({ type: 'mousemove', targetFrame: [ 0 ] }));
+					recorder.recordEvent(createEvent({ type: 'mousedown', targetFrame: [ 0 ], buttons: 1 }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', targetFrame: [ 0 ] }));
+					recorder.recordEvent(createEvent({ type: 'click', targetFrame: [ 0 ] }));
+					recorder.newTest();
+					recorder.insertCallback();
+					assertScriptValue(devToolsPort, testData.newTest);
 				}
 			},
 
@@ -440,7 +452,6 @@ define(function (require) {
 					recorder.recordEvent(createEvent({ type: 'mousedown', elementX: 0, elementY: 0, buttons: 1 }));
 					recorder.recordEvent(createEvent({ type: 'mousemove', elementX: 20, elementY: 20, buttons: 1 }));
 					recorder.recordEvent(createEvent({ type: 'mouseup', elementX: 20, elementY: 20 }));
-					recorder.recordEvent(createEvent({ type: 'click' }));
 					assertScriptValue(devToolsPort, testData.drag);
 				},
 
