@@ -1,6 +1,6 @@
-# Intern Recorder ![CI status](https://travis-ci.org/theintern/recorder.svg)
+# ![Intern Recorder](https://theintern.github.io/recorder/images/readme-logo.png)
 
-**This code is a work in progress and is not ready for use. Check back at the end of June!**
+![CI status](https://travis-ci.org/theintern/recorder.svg)
 
 The Intern Recorder is a Chrome Developer Tools extension that assists in the creation of functional tests for Web applications by automatically recording user interaction with a browser into a format compatible with the Intern testing framework.
 
