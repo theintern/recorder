@@ -2,6 +2,8 @@
 
 set -e
 
+MATCH_VERSION="[0-9]\+\(\.[0-9]\+\)\{2,\}"
+
 usage() {
 	echo "Usage: $0 [branch] [version]"
 	echo
@@ -65,7 +67,7 @@ git checkout $BRANCH
 
 # Get the version number for this release from package.json
 if [ "$VERSION" == "" ]; then
-	VERSION=$(grep -o '"version": "[^"]*"' package.json | grep -o "[0-9][0-9.]*")
+	VERSION=$(grep -o '"version": "[^"]*"' package.json | grep -o "$MATCH_VERSION")
 
 	# Convert the version number to an array that we can use to generate the next release version number
 	OLDIFS=$IFS
@@ -95,13 +97,18 @@ if [ "$VERSION" == "" ]; then
 else
 	MAKE_BRANCH=
 	BRANCH_VERSION=
-	PRE_VERSION=$(grep -o '"version": "[^"]*"' package.json | grep -o "[0-9][0-9.]*")
+	PRE_VERSION=$(grep -o '"version": "[^"]*"' package.json | grep -o "$MATCH_VERSION")
 	PRE_VERSION="$PRE_VERSION-pre"
 fi
 
-MANIFEST_VERSION=$(echo $VERSION | grep -o "[0-9][0-9.]*")
-MANIFEST_PRE_VERSION=$(echo $PRE_VERSION | grep -o "[0-9][0-9.]*")
-MANIFEST_BRANCH_VERSION=$(echo $BRANCH_VERSION | grep -o "[0-9][0-9.]*")
+MANIFEST_VERSION=$(echo "$VERSION" | grep -o "$MATCH_VERSION")
+MANIFEST_PRE_VERSION=$(echo "$PRE_VERSION" | grep -o "$MATCH_VERSION")
+if [ "$BRANCH_VERSION" == "" ]; then
+	MANIFEST_BRANCH_VERSION=
+else
+	MANIFEST_BRANCH_VERSION=$(echo "$BRANCH_VERSION" | grep -o "$MATCH_VERSION")
+fi
+
 TAG_VERSION=$VERSION
 RELEASE_TAG="$TAG_VERSION"
 
@@ -111,6 +118,7 @@ RELEASE_TAG="$TAG_VERSION"
 # $PRE_VERSION is the next pre-release version of Intern that will be set on the original branch after tagging
 # $MAKE_BRANCH is the name of the new minor release branch that should be created (if this is not a patch release)
 # $BRANCH_VERSION is the pre-release version of Intern that will be set on the minor release branch
+# $MANIFEST_* are the same versions as the unprefixed ones, except without a semver prerelease suffix
 
 # Something is messed up and this release has already happened
 if [ $(git tag |grep -c "^$TAG_VERSION$") -gt 0 ]; then
@@ -122,7 +130,7 @@ fi
 sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
 
 # Set the manifest version to release version compatible with manifest
-sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$MANIFEST_VERSION\"/" manifest.json
+sed -i -e "s/\"version\": \"[^\"]*\"/\"version\": \"$MANIFEST_VERSION\"/" package.json
 
 # Fix the Git-based dependencies to specific commit IDs
 echo -e "\nFixing dependency commits...\n"
