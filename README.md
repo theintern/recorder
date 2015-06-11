@@ -46,6 +46,12 @@ Chrome restricts which extension APIs are available to Dev Tools scripts, so the
 
 The recorder itself is maintained in the background script, which has access to the full Chrome extension API. The user interface is displayed from the Dev Tools page script and communicates with the recorder through a `chrome.runtime` messaging port. To intercept page interaction, the background script injects an event forwarding script into the browser tab that listens for various DOM events and passes them to the recorder through a second `chrome.runtime` messaging port.
 
+## Debugging
+
+* Injected content (eventProxy.js): Errors and console statements will show up directly in Dev Tools for the page being recorded.
+* Background script (background.js, Recorder.js): Open the Chrome extensions tab, find Intern Recorder in the list of loaded extensions, and click the “background page” link next to “Inspect views”. This will open a new Dev Tools window for the background script.
+* Dev tools page (devtools.html, devtools.js, panel.html, RecorderProxy.js): Open Dev Tools, undock it (using the top right icon, next to Settings, click and hold for drop-down), choose the Intern tab, then open another Dev Tools window. The second Dev Tools window will be inspecting the first Dev Tools window.
+
 ## Special thanks
 
 A very special thanks to [SITA](http://www.sita.aero/) for sponsoring work on the first release of the Intern Recorder.
