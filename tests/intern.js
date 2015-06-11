@@ -3,5 +3,8 @@ define({
 	loaderOptions: {
 		paths: { dojo: 'node_modules/dojo' }
 	},
-	suites: [ 'tests/unit/Recorder' ]
+	suites: [
+		'tests/unit/Recorder',
+		'tests/unit/RecorderProxy'
+	]
 });

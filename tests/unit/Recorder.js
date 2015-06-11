@@ -1,6 +1,7 @@
 define(function (require) {
 	var assert = require('intern/chai!assert');
 	var lang = require('dojo/lang');
+	var mock = require('../support/util').mock;
 	var mockChromeApi = require('../support/mockChromeApi');
 	var mockStorageApi = require('../support/mockStorageApi');
 	var registerSuite = require('intern!object');
@@ -55,26 +56,6 @@ define(function (require) {
 			target: 'target',
 			targetFrame: []
 		}, event);
-	}
-
-	function mock(object, methodName, applyOriginal) {
-		var originalMethod = object[methodName];
-		var method = object[methodName] = function () {
-			method.calls.push(Array.prototype.slice.call(arguments, 0));
-			if (applyOriginal) {
-				return originalMethod.apply(this, arguments);
-			}
-		};
-		method.calls = [];
-		method.clear = function () {
-			method.calls.splice(0, Infinity);
-		};
-		return {
-			remove: function () {
-				object[methodName] = originalMethod;
-				this.remove = function () {};
-			}
-		};
 	}
 
 	function mockBlobAndUrl() {
@@ -140,7 +121,7 @@ define(function (require) {
 			},
 
 			teardown: function () {
-				chrome = storage = recorder = null;
+				chrome = devToolsPort = storage = recorder = null;
 			},
 
 			'error handling': {

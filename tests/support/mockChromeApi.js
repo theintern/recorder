@@ -1,4 +1,5 @@
 define(function (require) {
+	var createMockMethod = require('./util').createMockMethod;
 	var lang = require('dojo/lang');
 
 	function createListener() {
@@ -21,29 +22,25 @@ define(function (require) {
 		};
 	}
 
-	function createMockMethod(impl) {
-		var method = function () {
-			method.calls.push(Array.prototype.slice.call(arguments, 0));
-			if (impl) {
-				return impl.apply(this, arguments);
-			}
-		};
-		method.calls = [];
-		method.clear = function () {
-			method.calls.splice(0, Infinity);
-		};
-		return method;
-	}
-
-	return {
+	var chrome = {
 		createChrome: function () {
 			return {
+				devtools: {
+					inspectedWindow: {
+						tabId: 1692485
+					}
+				},
+
 				downloads: {
 					download: createMockMethod()
 				},
 
 				runtime: {
-					onConnect: createListener()
+					id: 'mock',
+					onConnect: createListener(),
+					connect: function (id, options) {
+						return chrome.createPort(options.name);
+					}
 				},
 
 				webNavigation: {
@@ -74,4 +71,6 @@ define(function (require) {
 			};
 		}
 	};
+
+	return chrome;
 });
