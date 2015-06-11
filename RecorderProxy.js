@@ -1,5 +1,5 @@
 (typeof define === 'function' && define.amd ? define : /* istanbul ignore next */ function (factory) {
-	this.Recorder = factory();
+	this.RecorderProxy = factory();
 })(function () {
 	function getHotkey(event) {
 		var hotkey = {};
