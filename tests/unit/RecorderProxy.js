@@ -8,6 +8,8 @@ define(function (require) {
 	var registerSuite = require('intern!object');
 	var RecorderProxy = require('RecorderProxy');
 
+	var hotkeyIds = [ 'insertCallback', 'insertMouseMove', 'toggleState' ];
+
 	function createEvent(event) {
 		if (!event || !event.keyIdentifier) {
 			throw new Error('At least "keyIdentifier" is required to generate an event object');
@@ -60,17 +62,20 @@ define(function (require) {
 				], 'Valid calls from communication port should be executed on the proxy');
 			},
 
-			'hotkey listener setup': function () {
-				[ 'insertCallback', 'insertMouseMove', 'toggleState' ].forEach(function (id) {
+			'listener setup': function () {
+				hotkeyIds.forEach(function (id) {
 					var input = window.document.getElementById('hotkey-' + id);
 					assert.isFunction(input.onkeydown);
 				});
+
+				var script = window.document.getElementById('script');
+				assert.isFunction(script.oninput);
 			},
 
 			'hotkey set': function () {
 				mock(recorderProxy, 'send');
 
-				[ 'insertCallback', 'insertMouseMove', 'toggleState' ].forEach(function (id) {
+				hotkeyIds.forEach(function (id) {
 					recorderProxy.send.clear();
 
 					var input = window.document.getElementById('hotkey-' + id);
@@ -95,7 +100,86 @@ define(function (require) {
 				});
 			},
 
+			'script set': function () {
+				mock(recorderProxy, 'send');
 
+				recorderProxy.setScript('test');
+
+				var event = createEvent({ keyIdentifier: 'U+0020' });
+				window.document.getElementById('script').oninput(event);
+				assert.deepEqual(recorderProxy.send.calls, [
+					[ 'setScript', [ 'test' ] ]
+				]);
+			},
+
+			'#send': function () {
+				devToolsPort.postMessage.clear();
+				recorderProxy.send('test', [ 'arg1', 'argN' ]);
+				assert.deepEqual(devToolsPort.postMessage.calls, [
+					[ { method: 'test', args: [ 'arg1', 'argN' ] } ]
+				]);
+			},
+
+			'#setHotkey': function () {
+				var testKeys = [
+					{
+						id: 'insertCallback',
+						key: { altKey: true, metaKey: true, ctrlKey: true, shiftKey: true, keyIdentifier: 'U+0045' },
+						others: 'Ctrl+Alt+Shift+Win+E',
+						mac: '^⌥⇧⌘E'
+					},
+					{
+						id: 'insertMouseMove',
+						key: { shiftKey: true, keyIdentifier: 'U+0021' },
+						others: '!',
+						mac: '!'
+					},
+					{
+						id: 'toggleState',
+						key: { ctrlKey: true, keyIdentifier: 'U+0009' },
+						others: 'Ctrl+Tab',
+						mac: '^↹'
+					},
+					{
+						id: 'insertCallback',
+						key: { shiftKey: true, keyIdentifier: 'Home' },
+						others: 'Shift+Home',
+						mac: '⇧Home'
+					},
+					{
+						id: 'insertCallback',
+						key: { shiftKey: true, keyIdentifier: 'Shift' },
+						others: 'Shift+',
+						mac: '⇧'
+					}
+				];
+
+				var macWindow = mockDomApi.createWindow('MacIntel');
+				var macRecorderProxy = new RecorderProxy(mockChromeApi.createChrome(), macWindow);
+
+				testKeys.forEach(function (key) {
+					recorderProxy.setHotkey(key.id, key.key);
+					macRecorderProxy.setHotkey(key.id, key.key);
+					assert.strictEqual(window.document.getElementById('hotkey-' + key.id).value, key.others);
+					assert.strictEqual(macWindow.document.getElementById('hotkey-' + key.id).value, key.mac);
+				});
+
+				assert.throws(function () {
+					recorderProxy.setHotkey('invalid', {});
+				}, 'missing input for hotkey "invalid"');
+			},
+
+			'#setRecording': function () {
+				assert.isFalse(recorderProxy.recording);
+				recorderProxy.setRecording(true);
+				assert.isTrue(recorderProxy.recording);
+			},
+
+			'#setScript': function () {
+				recorderProxy.setScript('test');
+				recorderProxy.setScript(null);
+				assert.strictEqual(window.document.getElementById('script').value, 'test');
+			}
 		};
 	});
 });
