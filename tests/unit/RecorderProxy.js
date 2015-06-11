@@ -27,6 +27,7 @@ define(function (require) {
 	registerSuite(function () {
 		var chrome;
 		var devToolsPort;
+		var recordButton;
 		var recorderProxy;
 		var window;
 
@@ -36,7 +37,8 @@ define(function (require) {
 			beforeEach: function () {
 				chrome = mockChromeApi.createChrome();
 				window = mockDomApi.createWindow();
-				recorderProxy = new RecorderProxy(chrome, window);
+				recordButton = mockChromeApi.createButton();
+				recorderProxy = new RecorderProxy(chrome, window, recordButton);
 				devToolsPort = recorderProxy._port;
 			},
 
@@ -173,6 +175,15 @@ define(function (require) {
 				assert.isFalse(recorderProxy.recording);
 				recorderProxy.setRecording(true);
 				assert.isTrue(recorderProxy.recording);
+				assert.deepEqual(recordButton.update.calls, [
+					[ 'statusBarIcons/record_on.png' ]
+				]);
+				recordButton.update.clear();
+				recorderProxy.setRecording(false);
+				assert.isFalse(recorderProxy.recording);
+				assert.deepEqual(recordButton.update.calls, [
+					[ 'statusBarIcons/record_off.png' ]
+				]);
 			},
 
 			'#setScript': function () {

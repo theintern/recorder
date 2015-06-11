@@ -11,9 +11,10 @@
 		return hotkey;
 	}
 
-	function RecorderProxy(chrome, contentWindow) {
+	function RecorderProxy(chrome, contentWindow, recordButton) {
 		this.chrome = chrome;
 		this.contentWindow = contentWindow;
+		this._recordButton = recordButton;
 
 		this._initializeScript();
 		this._initializePort();
@@ -30,6 +31,8 @@
 		_port: null,
 
 		recording: false,
+
+		_recordButton: null,
 
 		_script: null,
 
@@ -195,6 +198,7 @@
 
 		setRecording: function (value) {
 			this.recording = value;
+			this._recordButton.update('statusBarIcons/record_' + (value ? 'on' : 'off') + '.png');
 		}
 	};
 

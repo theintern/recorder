@@ -61,6 +61,13 @@ define(function (require) {
 			};
 		},
 
+		createButton: function () {
+			return {
+				onClicked: createListener(),
+				update: createMockMethod()
+			};
+		},
+
 		createPort: function (name) {
 			return {
 				name: name,

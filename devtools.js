@@ -31,17 +31,7 @@ chrome.devtools.panels.create('Intern', 'recorder-on.png', 'panel.html', functio
 			return;
 		}
 
-		recorderProxy = new RecorderProxy(chrome, window);
-		(function () {
-			var oldSetRecording = recorderProxy.setRecording;
-			recorderProxy.setRecording = function (value) {
-				if (recordButton) {
-					recordButton.update('statusBarIcons/record_' + (value ? 'on' : 'off') + '.png');
-				}
-
-				return oldSetRecording.apply(this, arguments);
-			};
-		})();
+		recorderProxy = new RecorderProxy(chrome, window, recordButton);
 	});
 
 	// To avoid recording spurious interaction when a user has switched to another dev tools panel, pause recording
