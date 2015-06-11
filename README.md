@@ -6,7 +6,7 @@ The Intern Recorder is a Chrome Developer Tools extension that assists in the cr
 
 ## Installation
 
-Once deployed to the Chrome Web Store, the Intern Recorder can be installed simply by going to the store, searching for Intern Recorder, and clicking “Add to Chrome”.
+The latest version of Intern Recorder can be installed for free from the [Chrome Web Store](https://chrome.google.com/webstore/detail/intern-recorder/oalhlikaceknjlnmoombecafnmhbbgna "Intern Recorder on Chrome Web Store").
 
 Development versions can be installed by opening the Extensions tab in Chrome, enabling Developer mode, choosing “Load unpacked extension”, and choosing the directory where the Intern Recorder repository is checked out.
 
