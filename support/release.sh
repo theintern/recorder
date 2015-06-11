@@ -84,8 +84,8 @@ if [ "$VERSION" == "" ]; then
 
 		# The next release is usually going to be a minor release; if the next version is to be a major release,
 		# the package version will need to be manually updated in Git before release
-		PRE_VERSION="${PRE_VERSION[0]}.$((PRE_VERSION[1] + 1)).0-pre"
 		MANIFEST_PRE_VERSION="${PRE_VERSION[0]}.$((PRE_VERSION[1] + 1)).0.0"
+		PRE_VERSION="${PRE_VERSION[0]}.$((PRE_VERSION[1] + 1)).0-pre"
 
 	# This is a new patch release
 	else
@@ -95,8 +95,8 @@ if [ "$VERSION" == "" ]; then
 		MANIFEST_BRANCH_VERSION=
 
 		# The next release version will always be another patch version
-		PRE_VERSION="${PRE_VERSION[0]}.${PRE_VERSION[1]}.$((PRE_VERSION[2] + 1))-pre"
 		MANIFEST_PRE_VERSION="${PRE_VERSION[0]}.${PRE_VERSION[1]}.$((PRE_VERSION[2] + 1)).0"
+		PRE_VERSION="${PRE_VERSION[0]}.${PRE_VERSION[1]}.$((PRE_VERSION[2] + 1))-pre"
 	fi
 else
 	MAKE_BRANCH=
