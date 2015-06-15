@@ -27,7 +27,7 @@ define(function (require) {
 	registerSuite(function () {
 		var chrome;
 		var devToolsPort;
-		var recordButton;
+		var panel;
 		var recorderProxy;
 		var window;
 
@@ -37,8 +37,9 @@ define(function (require) {
 			beforeEach: function () {
 				chrome = mockChromeApi.createChrome();
 				window = mockDomApi.createWindow();
-				recordButton = mockChromeApi.createButton();
-				recorderProxy = new RecorderProxy(chrome, window, recordButton);
+				panel = mockChromeApi.createPanel();
+				recorderProxy = new RecorderProxy(chrome, panel);
+				panel.onShown.emit(window);
 				devToolsPort = recorderProxy._port;
 			},
 
@@ -72,6 +73,44 @@ define(function (require) {
 
 				var script = window.document.getElementById('script');
 				assert.isFunction(script.oninput);
+			},
+
+			'button communication': function () {
+				mock(recorderProxy, 'send');
+
+				panel.buttons.forEach(function (button) {
+					button.onClicked.emit();
+				});
+
+				assert.deepEqual(recorderProxy.send.calls, [
+					[ 'toggleState' ],
+					[ 'clear' ],
+					[ 'newTest' ],
+					[ 'save' ]
+				]);
+			},
+
+			'hide and show': function () {
+				mock(recorderProxy, 'send');
+
+				panel.onHidden.emit();
+				panel.onShown.emit(window);
+				assert.lengthOf(recorderProxy.send.calls, 0);
+
+				recorderProxy.setRecording(true);
+				assert.isTrue(recorderProxy.recording);
+
+				recorderProxy.send.clear();
+				panel.onHidden.emit();
+				assert.deepEqual(recorderProxy.send.calls, [
+					[ 'toggleState' ]
+				]);
+
+				recorderProxy.send.clear();
+				panel.onShown.emit(window);
+				assert.deepEqual(recorderProxy.send.calls, [
+					[ 'toggleState' ]
+				]);
 			},
 
 			'hotkey set': function () {
@@ -156,8 +195,10 @@ define(function (require) {
 					}
 				];
 
+				var macPanel = mockChromeApi.createPanel();
 				var macWindow = mockDomApi.createWindow('MacIntel');
-				var macRecorderProxy = new RecorderProxy(mockChromeApi.createChrome(), macWindow);
+				var macRecorderProxy = new RecorderProxy(mockChromeApi.createChrome(), macPanel);
+				macPanel.onShown.emit(macWindow);
 
 				testKeys.forEach(function (key) {
 					recorderProxy.setHotkey(key.id, key.key);
@@ -172,6 +213,8 @@ define(function (require) {
 			},
 
 			'#setRecording': function () {
+				var recordButton = recorderProxy._recordButton;
+
 				assert.isFalse(recorderProxy.recording);
 				recorderProxy.setRecording(true);
 				assert.isTrue(recorderProxy.recording);

@@ -76,6 +76,19 @@ define(function (require) {
 				onMessage: createListener(),
 				postMessage: createMockMethod()
 			};
+		},
+
+		createPanel: function () {
+			return {
+				buttons: [],
+				createStatusBarButton: createMockMethod(function () {
+					var button = chrome.createButton.apply(chrome, arguments);
+					this.buttons.push(button);
+					return button;
+				}),
+				onShown: createListener(),
+				onHidden: createListener()
+			};
 		}
 	};
 
