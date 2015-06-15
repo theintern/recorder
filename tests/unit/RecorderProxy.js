@@ -48,9 +48,10 @@ define(function (require) {
 			},
 
 			'port communication': function () {
-				assert.deepEqual(devToolsPort.postMessage.calls, [
-					[ { method: 'setTabId', args: [ 1692485 ] } ]
-				], 'The proxy should send the currently inspected tab ID to the recorder immediately upon creation');
+				// TODO: Chai needs a deepInclude
+				assert.deepEqual(devToolsPort.postMessage.calls[0],
+					[ { method: 'setTabId', args: [ 1692485 ] } ],
+					'The proxy should send the currently inspected tab ID to the recorder immediately upon creation');
 
 				assert.throws(function () {
 					devToolsPort.onMessage.emit({ method: 'not-a-method' });
@@ -95,7 +96,9 @@ define(function (require) {
 
 				panel.onHidden.emit();
 				panel.onShown.emit(window);
-				assert.lengthOf(recorderProxy.send.calls, 0);
+				assert.deepEqual(recorderProxy.send.calls, [
+					[ 'refreshUi' ]
+				]);
 
 				recorderProxy.setRecording(true);
 				assert.isTrue(recorderProxy.recording);
@@ -109,7 +112,8 @@ define(function (require) {
 				recorderProxy.send.clear();
 				panel.onShown.emit(window);
 				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'toggleState' ]
+					[ 'toggleState' ],
+					[ 'refreshUi' ]
 				]);
 			},
 
