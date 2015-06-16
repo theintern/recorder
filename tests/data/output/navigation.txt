@@ -8,7 +8,7 @@ define(function (require) {
 					.moveMouseTo(12, 23)
 					.clickMouseButton(0)
 					.end()
-				.reload()
+				.refresh()
 				.get('http://example.com')
 				.get('http://example.com/#test')
 				.get('http://2.example');
