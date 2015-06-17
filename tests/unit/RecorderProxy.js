@@ -165,55 +165,64 @@ define(function (require) {
 				]);
 			},
 
-			'#setHotkey': function () {
-				var testKeys = [
-					{
-						id: 'insertCallback',
-						key: { altKey: true, metaKey: true, ctrlKey: true, shiftKey: true, keyIdentifier: 'U+0045' },
-						others: 'Ctrl+Alt+Shift+Win+E',
-						mac: '^⌥⇧⌘E'
-					},
-					{
-						id: 'insertMouseMove',
-						key: { shiftKey: true, keyIdentifier: 'U+0021' },
-						others: '!',
-						mac: '!'
-					},
-					{
-						id: 'toggleState',
-						key: { ctrlKey: true, keyIdentifier: 'U+0009' },
-						others: 'Ctrl+Tab',
-						mac: '^↹'
-					},
-					{
-						id: 'insertCallback',
-						key: { shiftKey: true, keyIdentifier: 'Home' },
-						others: 'Shift+Home',
-						mac: '⇧Home'
-					},
-					{
-						id: 'insertCallback',
-						key: { shiftKey: true, keyIdentifier: 'Shift' },
-						others: 'Shift+',
-						mac: '⇧'
-					}
-				];
+			'#setHotkey': {
+				'basic tests': function () {
+					var testKeys = [
+						{
+							id: 'insertCallback',
+							key: { altKey: true, metaKey: true, ctrlKey: true, shiftKey: true, keyIdentifier: 'U+0045' },
+							others: 'Ctrl+Alt+Shift+Win+E',
+							mac: '^⌥⇧⌘E'
+						},
+						{
+							id: 'insertMouseMove',
+							key: { shiftKey: true, keyIdentifier: 'U+0021' },
+							others: '!',
+							mac: '!'
+						},
+						{
+							id: 'toggleState',
+							key: { ctrlKey: true, keyIdentifier: 'U+0009' },
+							others: 'Ctrl+Tab',
+							mac: '^↹'
+						},
+						{
+							id: 'insertCallback',
+							key: { shiftKey: true, keyIdentifier: 'Home' },
+							others: 'Shift+Home',
+							mac: '⇧Home'
+						},
+						{
+							id: 'insertCallback',
+							key: { shiftKey: true, keyIdentifier: 'Shift' },
+							others: 'Shift+',
+							mac: '⇧'
+						}
+					];
 
-				var macPanel = mockChromeApi.createPanel();
-				var macWindow = mockDomApi.createWindow('MacIntel');
-				var macRecorderProxy = new RecorderProxy(mockChromeApi.createChrome(), macPanel);
-				macPanel.onShown.emit(macWindow);
+					var macPanel = mockChromeApi.createPanel();
+					var macWindow = mockDomApi.createWindow('MacIntel');
+					var macRecorderProxy = new RecorderProxy(mockChromeApi.createChrome(), macPanel);
+					macPanel.onShown.emit(macWindow);
 
-				testKeys.forEach(function (key) {
-					recorderProxy.setHotkey(key.id, key.key);
-					macRecorderProxy.setHotkey(key.id, key.key);
-					assert.strictEqual(window.document.getElementById('hotkey-' + key.id).value, key.others);
-					assert.strictEqual(macWindow.document.getElementById('hotkey-' + key.id).value, key.mac);
-				});
+					testKeys.forEach(function (key) {
+						recorderProxy.setHotkey(key.id, key.key);
+						macRecorderProxy.setHotkey(key.id, key.key);
+						assert.strictEqual(window.document.getElementById('hotkey-' + key.id).value, key.others);
+						assert.strictEqual(macWindow.document.getElementById('hotkey-' + key.id).value, key.mac);
+					});
 
-				assert.throws(function () {
-					recorderProxy.setHotkey('invalid', {});
-				}, 'missing input for hotkey "invalid"');
+					assert.throws(function () {
+						recorderProxy.setHotkey('invalid', {});
+					}, 'missing input for hotkey "invalid"');
+				},
+
+				'crbug 48111': function () {
+					recorderProxy.setHotkey('insertCallback', { keyIdentifier: 'U+00C0' });
+					assert.strictEqual(window.document.getElementById('hotkey-insertCallback').value, '`');
+					recorderProxy.setHotkey('insertCallback', { shiftKey: true, keyIdentifier: 'U+00C0' });
+					assert.strictEqual(window.document.getElementById('hotkey-insertCallback').value, '~');
+				}
 			},
 
 			'#setRecording': function () {
