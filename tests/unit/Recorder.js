@@ -554,6 +554,23 @@ define(function (require) {
 						assertScriptValue(devToolsPort, testData.blank);
 					},
 
+					'modifier-free hotkeys': function () {
+						mock(recorder, 'insertCallback');
+						recorder.setHotkey('insertCallback', { keyIdentifier: 'Home' });
+
+						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Control', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Home', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Home', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Control', ctrlKey: false }));
+						assert.lengthOf(recorder.insertCallback.calls, 0,
+							'Pressing a hotkey with other modifiers active should not cause the hotkey to activate');
+
+						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Home' }));
+						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Home' }));
+						assert.lengthOf(recorder.insertCallback.calls, 1,
+							'Pressing a hotkey with other modifiers active should not cause the hotkey to activate');
+					},
+
 					'when recording is off': {
 						'toggleState': function () {
 							recorder.toggleState();
