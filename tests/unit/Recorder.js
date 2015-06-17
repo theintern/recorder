@@ -162,6 +162,10 @@ define(function (require) {
 						'Verifier that the setScript function does send to the devtools port when it is connected'
 					);
 
+					recorder.setTabId(1);
+					recorder.toggleState();
+					assert.isTrue(recorder.recording);
+
 					devToolsPort.postMessage.clear();
 					devToolsPort.onDisconnect.emit();
 					recorder.setScript('test2');
@@ -170,6 +174,8 @@ define(function (require) {
 						0,
 						'Messages should not be sent to port once it disconnects'
 					);
+
+					assert.isFalse(recorder.recording, 'Recorder should stop recording if devtools disconnects');
 
 					chrome.runtime.onConnect.emit(devToolsPort);
 
@@ -656,6 +662,8 @@ define(function (require) {
 				assert.isNull(recorder.tabId);
 				recorder.setTabId(1);
 				assert.strictEqual(recorder.tabId, 1);
+				recorder.setTabId(null);
+				assert.strictEqual(recorder.tabId, 1, 'null tab IDs should be ignored');
 			},
 
 			'#toggleState': {
