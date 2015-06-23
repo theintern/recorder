@@ -188,6 +188,7 @@ define(function (require) {
 
 					expected.push([ { method: 'setScript', args: [ 'test2' ] } ]);
 					expected.push([ { method: 'setRecording', args: [ false ] } ]);
+					expected.push([ { method: 'setStrategy', args: [ 'xpath' ] } ]);
 
 					assert.sameDeepMembers(
 						actual,
@@ -202,6 +203,7 @@ define(function (require) {
 
 					var eventProxyPort = mockChromeApi.createPort('eventProxy');
 					chrome.runtime.onConnect.emit(eventProxyPort);
+					eventProxyPort.postMessage.clear();
 
 					recorder.setScript('test');
 					assertScriptValue(
@@ -658,6 +660,22 @@ define(function (require) {
 				assert.deepEqual(devToolsPort.postMessage.calls, [ [ { method: 'setScript', args: [ 'test' ] } ] ]);
 			},
 
+			'#setStrategy': function () {
+				devToolsPort.postMessage.clear();
+
+				var eventProxyPort = mockChromeApi.createPort('eventProxy');
+				chrome.runtime.onConnect.emit(eventProxyPort);
+				eventProxyPort.postMessage.clear();
+
+				recorder.setStrategy('text');
+				assert.lengthOf(devToolsPort.postMessage.calls, 0);
+				assert.deepEqual(eventProxyPort.postMessage.calls, [ [ { method: 'setStrategy', args: [ 'text' ] } ] ]);
+
+				assert.throws(function () {
+					recorder.setStrategy('invalid');
+				}, 'Invalid search strategy');
+			},
+
 			'#setTabId': function () {
 				assert.isNull(recorder.tabId);
 				recorder.setTabId(1);
@@ -682,16 +700,17 @@ define(function (require) {
 					recorder.toggleState();
 					assert.isTrue(recorder.recording);
 					assert.deepEqual(chrome.tabs.executeScript.calls, [
-						[ 1, { file: 'lib/eventProxy.js', allFrames: true } ]
+						[ 1, { file: 'lib/EventProxy.js', allFrames: true } ],
+						[ 1, { file: 'lib/content.js', allFrames: true } ]
 					], 'Content scripts should be injected when turning on recording');
 					assert.deepEqual(recorder.newTest.calls, [ [] ],
 						'New test should automatically be created when toggling recording for the first time');
 
+					chrome.tabs.executeScript.clear();
 					recorder.toggleState();
 					assert.isFalse(recorder.recording);
-					assert.deepEqual(chrome.tabs.executeScript.calls, [
-						[ 1, { file: 'lib/eventProxy.js', allFrames: true } ]
-					], 'Content scripts should not be injected when turning off recording');
+					assert.lengthOf(chrome.tabs.executeScript.calls, 0,
+						'Content scripts should not be injected when turning off recording');
 
 					recorder.toggleState();
 					assert.isTrue(recorder.recording);

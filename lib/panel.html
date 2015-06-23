@@ -41,23 +41,30 @@
 			font-family: sans-serif;
 		}
 
-		.hotkeys {
+		.configuration {
 			flex: 1;
 			margin: 0 5px;
 			min-width: 145px;
 		}
 
-		.hotkeys-title {
+		.hotkeys-title,
+		.options-title {
 			color: rgb(110, 116, 128);
 			font-size: 16px;
 			margin: 0.5rem 0 1rem;
 		}
 
-		.hotkey {
+		.options-title {
+			margin-top: 1.5rem;
+		}
+
+		.hotkey,
+		.option {
 			margin-top: 0.5rem;
 		}
 
-		.hotkey-label {
+		.hotkey-label,
+		.option-label {
 			display: block;
 		}
 	</style>
@@ -65,22 +72,35 @@
 		<div class="hbox fullHeight panel">
 			<textarea class="fullHeight script" id="script" spellcheck="false" wrap="off" readonly
 				placeholder="The generated test script will show up here once you begin recording."></textarea>
-			<div class="hotkeys">
-				<div class="hotkeys-title">Hotkeys</div>
+			<div class="configuration">
+				<div class="hotkeys">
+					<div class="hotkeys-title">Hotkeys</div>
 
-				<div class="hotkey">
-					<label class="hotkey-label" for="hotkey-toggleState">Pause/resume recorder</label>
-					<input class="hotkey-input" id="hotkey-toggleState">
+					<div class="hotkey">
+						<label class="hotkey-label" for="hotkey-toggleState">Pause/resume recorder</label>
+						<input class="hotkey-input" id="hotkey-toggleState">
+					</div>
+
+					<div class="hotkey">
+						<label class="hotkey-label" for="hotkey-insertCallback">Insert callback</label>
+						<input class="hotkey-input" id="hotkey-insertCallback">
+					</div>
+
+					<div class="hotkey">
+						<label class="hotkey-label" for="hotkey-insertMouseMove">Insert move to current mouse position</label>
+						<input class="hotkey-input" id="hotkey-insertMouseMove">
+					</div>
 				</div>
+				<div class="options">
+					<div class="options-title">Options</div>
 
-				<div class="hotkey">
-					<label class="hotkey-label" for="hotkey-insertCallback">Insert callback</label>
-					<input class="hotkey-input" id="hotkey-insertCallback">
-				</div>
-
-				<div class="hotkey">
-					<label class="hotkey-label" for="hotkey-insertMouseMove">Insert move to current mouse position</label>
-					<input class="hotkey-input" id="hotkey-insertMouseMove">
+					<div class="option">
+						<label class="option-label" for="option-strategy">Element selection strategy</label>
+						<select class="option-input" id="option-strategy">
+							<option value="xpath">Use path of element</option>
+							<option value="text">Use text of element</option>
+						</select>
+					</div>
 				</div>
 			</div>
 		</div>

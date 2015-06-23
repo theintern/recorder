@@ -74,6 +74,9 @@ define(function (require) {
 
 				var script = window.document.getElementById('script');
 				assert.isFunction(script.oninput);
+
+				var strategy = window.document.getElementById('option-strategy');
+				assert.isFunction(strategy.onchange);
 			},
 
 			'button communication': function () {
@@ -155,6 +158,26 @@ define(function (require) {
 				assert.deepEqual(recorderProxy.send.calls, [
 					[ 'setScript', [ 'test' ] ]
 				]);
+			},
+
+			'strategy set': function () {
+				mock(recorderProxy, 'send');
+
+				recorderProxy.setScript('test');
+
+				window.document.getElementById('option-strategy').onchange({ target: { value: 'test' } });
+				assert.deepEqual(recorderProxy.send.calls, [
+					[ 'setStrategy', [ 'test' ] ]
+				]);
+			},
+
+			'hidden panel': function () {
+				var inactiveRecorderProxy = new RecorderProxy(chrome, panel);
+				assert.doesNotThrow(function () {
+					inactiveRecorderProxy.setScript('test');
+					inactiveRecorderProxy.setStrategy('test');
+					inactiveRecorderProxy.setHotkey('insertCallback', { keyIdentifier: 'U+0045' });
+				}, 'Setting properties for the UI without an active panel should be a no-op');
 			},
 
 			'#send': function () {
@@ -246,6 +269,11 @@ define(function (require) {
 				recorderProxy.setScript('test');
 				recorderProxy.setScript(null);
 				assert.strictEqual(window.document.getElementById('script').value, 'test');
+			},
+
+			'#setStrategy': function () {
+				recorderProxy.setStrategy('xpath');
+				assert.strictEqual(window.document.getElementById('option-strategy').value, 'xpath');
 			}
 		};
 	});

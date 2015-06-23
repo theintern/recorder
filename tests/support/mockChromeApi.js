@@ -71,7 +71,9 @@ define(function (require) {
 		createPort: function (name) {
 			return {
 				name: name,
-				disconnect: createMockMethod(),
+				disconnect: createMockMethod(function () {
+					this.onDisconnect.emit();
+				}),
 				onDisconnect: createListener(),
 				onMessage: createListener(),
 				postMessage: createMockMethod()
