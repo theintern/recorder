@@ -1,6 +1,6 @@
 {
 	"name": "intern-recorder",
-	"version": "1.0.0-rc.4",
+	"version": "1.0.0-pre",
 	"description": "Intern Recorder. Creates functional tests for Intern based on interaction with a site from your browser.",
 	"license": "BSD-3-Clause",
 	"repository": {
