@@ -51,7 +51,7 @@ define(function (require) {
 				eventProxy = new EventProxy(window, document, chrome);
 				eventProxy.connect();
 				eventProxy.setStrategy('xpath');
-				eventProxyPort = eventProxy._port;
+				eventProxyPort = eventProxy.port;
 			},
 
 			teardown: function () {
@@ -73,13 +73,13 @@ define(function (require) {
 			},
 
 			'port disconnect/reconnect': function () {
-				assert.ok(eventProxy._port);
+				assert.ok(eventProxy.port);
 				assert.lengthOf(eventProxyPort.disconnect.calls, 0);
 				eventProxy.connect();
 				assert.lengthOf(eventProxyPort.disconnect.calls, 1);
-				assert.notStrictEqual(eventProxyPort, eventProxy._port, 'Reconnection should replace an existing port');
+				assert.notStrictEqual(eventProxyPort, eventProxy.port, 'Reconnection should replace an existing port');
 
-				var newProxyPort = eventProxy._port;
+				var newProxyPort = eventProxy.port;
 				eventProxyPort.postMessage.clear();
 				newProxyPort.postMessage.clear();
 				document.dispatchEvent(createEvent());
@@ -105,7 +105,7 @@ define(function (require) {
 					childEventProxy.connect();
 					childEventProxy.setStrategy('xpath');
 
-					var childEventProxyPort = childEventProxy._port;
+					var childEventProxyPort = childEventProxy.port;
 					childEventProxy.send(detail);
 					assert.lengthOf(childEventProxyPort.postMessage.calls, 0,
 						'Messages from child frames should not go to the chrome runtime port');
