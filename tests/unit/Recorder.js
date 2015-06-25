@@ -419,7 +419,7 @@ define(function (require) {
 				'click': function () {
 					recorder.recordEvent(createEvent({ type: 'mousemove' }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', buttons: 1 }));
-					recorder.recordEvent(createEvent({ type: 'mouseup' }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', target: '/HTML/BODY[1]' }));
 					recorder.recordEvent(createEvent({ type: 'click' }));
 					assertScriptValue(devToolsPort, testData.click);
 				},
@@ -427,10 +427,10 @@ define(function (require) {
 				'double click': function () {
 					recorder.recordEvent(createEvent({ type: 'mousemove' }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', buttons: 1 }));
-					recorder.recordEvent(createEvent({ type: 'mouseup' }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', target: '/HTML/BODY[1]' }));
 					recorder.recordEvent(createEvent({ type: 'click' }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', buttons: 1 }));
-					recorder.recordEvent(createEvent({ type: 'mouseup' }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', target: '/HTML/BODY[1]' }));
 					recorder.recordEvent(createEvent({ type: 'click' }));
 					recorder.recordEvent(createEvent({ type: 'dblclick' }));
 					assertScriptValue(devToolsPort, testData.doubleClick);
@@ -440,18 +440,18 @@ define(function (require) {
 					recorder.recordEvent(createEvent({ type: 'mousemove', elementX: 0, elementY: 0 }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', elementX: 0, elementY: 0, buttons: 1 }));
 					recorder.recordEvent(createEvent({ type: 'mousemove', elementX: 20, elementY: 20, buttons: 1 }));
-					recorder.recordEvent(createEvent({ type: 'mouseup', elementX: 20, elementY: 20 }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', target: '/HTML/BODY[1]', elementX: 40, elementY: 40 }));
 					assertScriptValue(devToolsPort, testData.drag);
 				},
 
 				'frame': function () {
 					recorder.recordEvent(createEvent({ type: 'mousemove', targetFrame: [ 1, 2 ] }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', targetFrame: [ 1, 2 ], buttons: 1 }));
-					recorder.recordEvent(createEvent({ type: 'mouseup', targetFrame: [ 1, 2 ] }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', targetFrame: [ 1, 2 ], target: '/HTML/BODY[1]' }));
 					recorder.recordEvent(createEvent({ type: 'click', targetFrame: [ 1, 2 ] }));
 					recorder.recordEvent(createEvent({ type: 'mousemove', targetFrame: [ 1, 3 ] }));
 					recorder.recordEvent(createEvent({ type: 'mousedown', targetFrame: [ 1, 3 ], buttons: 1 }));
-					recorder.recordEvent(createEvent({ type: 'mouseup', targetFrame: [ 1, 3 ] }));
+					recorder.recordEvent(createEvent({ type: 'mouseup', targetFrame: [ 1, 3 ], target: '/HTML/BODY[1]' }));
 					recorder.recordEvent(createEvent({ type: 'click', targetFrame: [ 1, 3 ] }));
 					assertScriptValue(devToolsPort, testData.frame);
 				},

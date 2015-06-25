@@ -3,16 +3,30 @@ define(function (require) {
 	var lang = require('dojo/lang');
 
 	function createMockDocument() {
+		function getBoundingClientRect() {
+			return { top: 0, left: 0 };
+		}
+
 		var elements = {};
 
 		var document = createListener();
 		document.documentElement = {
-			getBoundingClientRect: function () {
-				return { top: 0, left: 0 };
-			},
+			getBoundingClientRect: getBoundingClientRect,
 			nodeName: 'HTML',
 			parentNode: document,
 			tagName: 'HTML'
+		};
+		document.body = {
+			getBoundingClientRect: getBoundingClientRect,
+			nodeName: 'BODY',
+			parentNode: document.documentElement,
+			previousElementSibling: {
+				getBoundingClientRect: getBoundingClientRect,
+				nodeName: 'HEAD',
+				parentNode: document.documentElement,
+				tagName: 'HEAD'
+			},
+			tagName: 'BODY'
 		};
 		document.evaluate = createMockMethod(function (text, element) {
 			var i = 0;

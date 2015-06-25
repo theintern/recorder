@@ -7,7 +7,9 @@ define(function (require) {
 				.findByXpath('target')
 					.moveMouseTo(0, 0)
 					.pressMouseButton(0)
-					.moveMouseTo(20, 20)
+					.end()
+				.findByXpath('/HTML/BODY[1]')
+					.moveMouseTo(40, 40)
 					.releaseMouseButton(0);
 		});
 	});
