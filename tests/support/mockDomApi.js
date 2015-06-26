@@ -28,6 +28,9 @@ define(function (require) {
 			},
 			tagName: 'BODY'
 		};
+		document.elementsFromPoint = function () {
+			return [ document.body, document.documentElement ];
+		};
 		document.evaluate = createMockMethod(function (text, element) {
 			var i = 0;
 			return {
