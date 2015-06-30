@@ -13,6 +13,7 @@ define(function (require) {
 		click: require('dojo/text!../data/output/click.txt'),
 		doubleClick: require('dojo/text!../data/output/doubleClick.txt'),
 		drag: require('dojo/text!../data/output/drag.txt'),
+		findDisplayed: require('dojo/text!../data/output/findDisplayed.txt'),
 		frame: require('dojo/text!../data/output/frame.txt'),
 		hotkey: require('dojo/text!../data/output/hotkey.txt'),
 		mouseMove: require('dojo/text!../data/output/mouseMove.txt'),
@@ -189,6 +190,7 @@ define(function (require) {
 					expected.push([ { method: 'setScript', args: [ 'test2' ] } ]);
 					expected.push([ { method: 'setRecording', args: [ false ] } ]);
 					expected.push([ { method: 'setStrategy', args: [ 'xpath' ] } ]);
+					expected.push([ { method: 'setFindDisplayed', args: [ false ] } ]);
 
 					assert.sameDeepMembers(
 						actual,
@@ -635,6 +637,30 @@ define(function (require) {
 				finally {
 					handle.remove();
 				}
+			},
+
+			'#setFindDisplayed': function () {
+				devToolsPort.postMessage.clear();
+
+				var eventProxyPort = mockChromeApi.createPort('eventProxy');
+				chrome.runtime.onConnect.emit(eventProxyPort);
+				eventProxyPort.postMessage.clear();
+
+				recorder.setTabId(1);
+				recorder.toggleState();
+				recorder.setFindDisplayed(true);
+				assert.lengthOf(devToolsPort.postMessage.calls, 3);
+				assert.deepEqual(eventProxyPort.postMessage.calls, [ [ { method: 'setFindDisplayed', args: [ true ] } ] ]);
+
+				recorder.recordEvent(createEvent({ type: 'mousemove' }));
+				recorder.insertMouseMove();
+				assertScriptValue(devToolsPort, testData.findDisplayed, 'Script should use "findDisplayedByXpath"');
+
+				recorder.clear();
+				recorder.setFindDisplayed(false);
+				recorder.recordEvent(createEvent({ type: 'mousemove' }));
+				recorder.insertMouseMove();
+				assertScriptValue(devToolsPort, testData.mouseMove, 'Script should use "findByXpath"');
 			},
 
 			'#setHotkey': function () {

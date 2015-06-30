@@ -77,6 +77,9 @@ define(function (require) {
 
 				var strategy = window.document.getElementById('option-strategy');
 				assert.isFunction(strategy.onchange);
+
+				var findDisplayed = window.document.getElementById('option-findDisplayed');
+				assert.isFunction(findDisplayed.onchange);
 			},
 
 			'button communication': function () {
@@ -171,11 +174,23 @@ define(function (require) {
 				]);
 			},
 
+			'findDisplayed set': function () {
+				mock(recorderProxy, 'send');
+
+				recorderProxy.setScript('test');
+
+				window.document.getElementById('option-findDisplayed').onchange({ target: { checked: true } });
+				assert.deepEqual(recorderProxy.send.calls, [
+					[ 'setFindDisplayed', [ true ] ]
+				]);
+			},
+
 			'hidden panel': function () {
 				var inactiveRecorderProxy = new RecorderProxy(chrome, panel);
 				assert.doesNotThrow(function () {
 					inactiveRecorderProxy.setScript('test');
 					inactiveRecorderProxy.setStrategy('test');
+					inactiveRecorderProxy.setFindDisplayed(true);
 					inactiveRecorderProxy.setHotkey('insertCallback', { keyIdentifier: 'U+0045' });
 				}, 'Setting properties for the UI without an active panel should be a no-op');
 			},
@@ -186,6 +201,11 @@ define(function (require) {
 				assert.deepEqual(devToolsPort.postMessage.calls, [
 					[ { method: 'test', args: [ 'arg1', 'argN' ] } ]
 				]);
+			},
+
+			'#setFindDisplayed': function () {
+				recorderProxy.setFindDisplayed(true);
+				assert.strictEqual(window.document.getElementById('option-findDisplayed').checked, true);
 			},
 
 			'#setHotkey': {
