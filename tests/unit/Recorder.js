@@ -650,7 +650,6 @@ define(function (require) {
 				recorder.toggleState();
 				recorder.setFindDisplayed(true);
 				assert.lengthOf(devToolsPort.postMessage.calls, 3);
-				assert.deepEqual(eventProxyPort.postMessage.calls, [ [ { method: 'setFindDisplayed', args: [ true ] } ] ]);
 
 				recorder.recordEvent(createEvent({ type: 'mousemove' }));
 				recorder.insertMouseMove();
