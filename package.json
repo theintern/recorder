@@ -9,7 +9,7 @@
 	},
 	"devDependencies": {
 		"dojo": "2.0.0-alpha.6",
-		"intern": "3.0.0-rc.1"
+		"intern": "3.0.0-rc.3"
 	},
 	"bugs": "https://github.com/theintern/intern/issues",
 	"keywords": [ "javascript", "test", "unit", "testing", "ci", "continuous integration", "bdd", "tdd", "xunit", "istanbul", "chai", "dojo", "toolkit", "selenium", "sauce labs", "code coverage", "recorder", "functional", "webdriver" ],
