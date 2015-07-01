@@ -3,7 +3,7 @@
 	"name": "Intern Recorder",
 	"description": "Creates functional tests for Intern based on interaction with a site from your browser.",
 	"version": "1.0.0.5",
-	"version_name": "1.0.0-pre",
+	"version_name": "1.0.0-rc.6",
 	"minimum_chrome_version": "26.0",
 	"devtools_page": "lib/devtools.html",
 	"background": {
