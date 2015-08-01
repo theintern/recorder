@@ -19,7 +19,10 @@ define(function (require) {
 		mouseMove: require('dojo/text!../data/output/mouseMove.txt'),
 		navigation: require('dojo/text!../data/output/navigation.txt'),
 		newTest: require('dojo/text!../data/output/newTest.txt'),
-		type: require('dojo/text!../data/output/type.txt')
+		type: require('dojo/text!../data/output/type.txt'),
+		object: require('dojo/text!../data/output/object.txt'),
+		bdd: require('dojo/text!../data/output/bdd.txt'),
+		tdd: require('dojo/text!../data/output/tdd.txt')
 	};
 
 	function assertScriptValue(port, value, assertMessage) {
@@ -191,6 +194,7 @@ define(function (require) {
 					expected.push([ { method: 'setRecording', args: [ false ] } ]);
 					expected.push([ { method: 'setStrategy', args: [ 'xpath' ] } ]);
 					expected.push([ { method: 'setFindDisplayed', args: [ false ] } ]);
+					expected.push([ { method: 'setInterface', args: [ 'tdd' ] } ]);
 
 					assert.sameDeepMembers(
 						actual,
@@ -699,6 +703,30 @@ define(function (require) {
 				assert.throws(function () {
 					recorder.setStrategy('invalid');
 				}, 'Invalid search strategy');
+			},
+
+			'#setInterface': function () {
+				devToolsPort.postMessage.clear();
+
+				var eventProxyPort = mockChromeApi.createPort('eventProxy');
+				chrome.runtime.onConnect.emit(eventProxyPort);
+				eventProxyPort.postMessage.clear();
+
+				recorder.setTabId(1);
+				recorder.toggleState();
+				recorder.setInterface('bdd');
+				assert.lengthOf(devToolsPort.postMessage.calls, 5);
+				assertScriptValue(devToolsPort, testData.bdd, 'Script should use "bdd" interface');
+
+				recorder.setInterface('tdd');
+				assertScriptValue(devToolsPort, testData.tdd, 'Script should use "tdd" interface');
+
+				recorder.setInterface('object');
+				assertScriptValue(devToolsPort, testData.object, 'Script should use "object" interface');
+
+				assert.throws(function () {
+					recorder.setInterface('invalid');
+				}, 'Invalid test interface');
 			},
 
 			'#setTabId': function () {

@@ -1,0 +1,9 @@
+define(function (require) {
+	var bdd = require('intern!bdd');
+	bdd.describe('recorder-generated suite', function () {
+		bdd.it('Test 1', function () {
+			return this.remote
+				.get('http://example.com');
+		});
+	});
+});
