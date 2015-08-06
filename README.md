@@ -4,6 +4,10 @@
 
 The Intern Recorder is a Chrome Developer Tools extension that assists in the creation of functional tests for Web applications by automatically recording user interaction with a browser into a format compatible with the Intern testing framework.
 
+## Support
+
+Please read the [contribution guidelines](https://github.com/theintern/recorder/blob/master/CONTRIBUTING.md) for information on how to get help! New issues and enhancement requests should be submitted to the [main issue tracker](https://github.com/theintern/intern/issues/new?body=Description:%0A%0ASteps+to+reproduce:%0A%0A1.%20%E2%80%A6%0A2.%20%E2%80%A6%0A3.%20%E2%80%A6%0A%0AExpected%20result:%0AActual%20result:%0A%0AIntern%20version:%0ARecorder%20version:%0A%0AAny%20additional%20information:).
+
 ## Installation
 
 The latest version of Intern Recorder can be installed for free from the [Chrome Web Store](https://chrome.google.com/webstore/detail/intern-recorder/oalhlikaceknjlnmoombecafnmhbbgna "Intern Recorder on Chrome Web Store").
