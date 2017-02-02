@@ -11,8 +11,8 @@ define(function (require) {
 	var hotkeyIds = [ 'insertCallback', 'insertMouseMove', 'toggleState' ];
 
 	function createEvent(event) {
-		if (!event || !event.keyIdentifier) {
-			throw new Error('At least "keyIdentifier" is required to generate an event object');
+		if (!event || !event.key) {
+			throw new Error('At least "key" is required to generate an event object');
 		}
 
 		return lang.mixin({
@@ -135,7 +135,7 @@ define(function (require) {
 					var key = {
 						altKey: false,
 						ctrlKey: false,
-						keyIdentifier: 'U+0045',
+						key: 'U+0045',
 						metaKey: false,
 						shiftKey: true
 					};
@@ -156,7 +156,7 @@ define(function (require) {
 
 				recorderProxy.setScript('test');
 
-				var event = createEvent({ keyIdentifier: 'U+0020' });
+				var event = createEvent({ key: 'U+0020' });
 				window.document.getElementById('script').oninput(event);
 				assert.deepEqual(recorderProxy.send.calls, [
 					[ 'setScript', [ 'test' ] ]
@@ -191,7 +191,7 @@ define(function (require) {
 					inactiveRecorderProxy.setScript('test');
 					inactiveRecorderProxy.setStrategy('test');
 					inactiveRecorderProxy.setFindDisplayed(true);
-					inactiveRecorderProxy.setHotkey('insertCallback', { keyIdentifier: 'U+0045' });
+					inactiveRecorderProxy.setHotkey('insertCallback', { key: 'U+0045' });
 				}, 'Setting properties for the UI without an active panel should be a no-op');
 			},
 
@@ -213,31 +213,31 @@ define(function (require) {
 					var testKeys = [
 						{
 							id: 'insertCallback',
-							key: { altKey: true, metaKey: true, ctrlKey: true, shiftKey: true, keyIdentifier: 'U+0045' },
+							key: { altKey: true, metaKey: true, ctrlKey: true, shiftKey: true, key: 'U+0045' },
 							others: 'Ctrl+Alt+Shift+Win+E',
 							mac: '^⌥⇧⌘E'
 						},
 						{
 							id: 'insertMouseMove',
-							key: { shiftKey: true, keyIdentifier: 'U+0021' },
+							key: { shiftKey: true, key: 'U+0021' },
 							others: '!',
 							mac: '!'
 						},
 						{
 							id: 'toggleState',
-							key: { ctrlKey: true, keyIdentifier: 'U+0009' },
+							key: { ctrlKey: true, key: 'U+0009' },
 							others: 'Ctrl+Tab',
 							mac: '^↹'
 						},
 						{
 							id: 'insertCallback',
-							key: { shiftKey: true, keyIdentifier: 'Home' },
+							key: { shiftKey: true, key: 'Home' },
 							others: 'Shift+Home',
 							mac: '⇧Home'
 						},
 						{
 							id: 'insertCallback',
-							key: { shiftKey: true, keyIdentifier: 'Shift' },
+							key: { shiftKey: true, key: 'Shift' },
 							others: 'Shift+',
 							mac: '⇧'
 						}
@@ -261,9 +261,9 @@ define(function (require) {
 				},
 
 				'crbug 48111': function () {
-					recorderProxy.setHotkey('insertCallback', { keyIdentifier: 'U+00C0' });
+					recorderProxy.setHotkey('insertCallback', { key: 'U+00C0' });
 					assert.strictEqual(window.document.getElementById('hotkey-insertCallback').value, '`');
-					recorderProxy.setHotkey('insertCallback', { shiftKey: true, keyIdentifier: 'U+00C0' });
+					recorderProxy.setHotkey('insertCallback', { shiftKey: true, key: 'U+00C0' });
 					assert.strictEqual(window.document.getElementById('hotkey-insertCallback').value, '~');
 				}
 			},

@@ -18,7 +18,7 @@ define(function (require) {
 			clientY: 4,
 			elementX: 1,
 			elementY: 2,
-			keyIdentifier: null,
+			key: null,
 			location: null,
 			metaKey: false,
 			shiftKey: false,
