@@ -460,72 +460,72 @@ define(function (require) {
 
 				'type': function () {
 					// H
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Shift', shiftKey: true }));
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0048', shiftKey: true }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0048', shiftKey: true }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Shift' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'Shift', shiftKey: true }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0048', shiftKey: true }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0048', shiftKey: true }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'Shift' }));
 
 					// e
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0045' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0045' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0045' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0045' }));
 
 					// l
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+004C' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+004C' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+004C' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+004C' }));
 
 					// l
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+004C' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+004C' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+004C' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+004C' }));
 
 					// o
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+004F' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+004F' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+004F' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+004F' }));
 
 					// ,
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+002C' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+002C' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+002C' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+002C' }));
 
 					// <space>
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0020' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0020' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0020' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0020' }));
 
 					// w
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0057' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0057' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0057' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0057' }));
 
 					// o
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+004F' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+004F' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+004F' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+004F' }));
 
 					// r
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0052' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0052' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0052' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0052' }));
 
 					// l
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+004C' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+004C' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+004C' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+004C' }));
 
 					// d
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0044' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0044' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0044' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0044' }));
 
 					// !
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Shift', shiftKey: true }));
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0021', shiftKey: true }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0021', shiftKey: true }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Shift' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'Shift', shiftKey: true }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0021', shiftKey: true }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0021', shiftKey: true }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'Shift' }));
 
 					// Shift/unshift test
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Shift', shiftKey: true }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Shift' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'Shift', shiftKey: true }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'Shift' }));
 
 					// keypad 0 test
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+0030', location: 3 }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+0030', location: 3 }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+0030', location: 3 }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+0030', location: 3 }));
 
 					// non-printable character test
-					recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Enter' }));
-					recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Enter' }));
+					recorder.recordEvent(createEvent({ type: 'keydown', key: 'Enter' }));
+					recorder.recordEvent(createEvent({ type: 'keyup', key: 'Enter' }));
 
 					assertScriptValue(devToolsPort, testData.type);
 				},
@@ -533,17 +533,17 @@ define(function (require) {
 				'hotkey': {
 					'with other keypresses': function () {
 						mock(recorder, 'insertCallback');
-						recorder.setHotkey('insertCallback', { keyIdentifier: 'U+002B', ctrlKey: true });
+						recorder.setHotkey('insertCallback', { key: 'U+002B', ctrlKey: true });
 
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Control', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Control', ctrlKey: false }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'Control', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'Control', ctrlKey: false }));
 						assert.lengthOf(recorder.insertCallback.calls, 0,
 							'Pressing only one part of a hotkey combination should not cause the hotkey to activate');
 
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Control', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+002B', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+002B', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Control', ctrlKey: false }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'Control', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+002B', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+002B', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'Control', ctrlKey: false }));
 						assert.lengthOf(recorder.insertCallback.calls, 1,
 							'Pressing a hotkey should cause the corresponding hotkey to activate');
 
@@ -552,12 +552,12 @@ define(function (require) {
 
 					'with no other keypresses': function () {
 						mock(recorder, 'insertCallback');
-						recorder.setHotkey('insertCallback', { keyIdentifier: 'U+002B', ctrlKey: true });
+						recorder.setHotkey('insertCallback', { key: 'U+002B', ctrlKey: true });
 
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Control', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+002B', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+002B', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Control', ctrlKey: false }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'Control', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+002B', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+002B', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'Control', ctrlKey: false }));
 						assert.lengthOf(recorder.insertCallback.calls, 1,
 							'Pressing a hotkey should cause the corresponding hotkey to activate');
 
@@ -566,17 +566,17 @@ define(function (require) {
 
 					'modifier-free hotkeys': function () {
 						mock(recorder, 'insertCallback');
-						recorder.setHotkey('insertCallback', { keyIdentifier: 'Home' });
+						recorder.setHotkey('insertCallback', { key: 'Home' });
 
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Control', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Home', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Home', ctrlKey: true }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Control', ctrlKey: false }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'Control', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'Home', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'Home', ctrlKey: true }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'Control', ctrlKey: false }));
 						assert.lengthOf(recorder.insertCallback.calls, 0,
 							'Pressing a hotkey with other modifiers active should not cause the hotkey to activate');
 
-						recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Home' }));
-						recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Home' }));
+						recorder.recordEvent(createEvent({ type: 'keydown', key: 'Home' }));
+						recorder.recordEvent(createEvent({ type: 'keyup', key: 'Home' }));
 						assert.lengthOf(recorder.insertCallback.calls, 1,
 							'Pressing a hotkey with other modifiers active should not cause the hotkey to activate');
 					},
@@ -586,11 +586,11 @@ define(function (require) {
 							recorder.toggleState();
 							assert.isFalse(recorder.recording);
 
-							recorder.setHotkey('toggleState', { keyIdentifier: 'U+002B', ctrlKey: true });
-							recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Control', ctrlKey: true }));
-							recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+002B', ctrlKey: true }));
-							recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+002B', ctrlKey: true }));
-							recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Control', ctrlKey: false }));
+							recorder.setHotkey('toggleState', { key: 'U+002B', ctrlKey: true });
+							recorder.recordEvent(createEvent({ type: 'keydown', key: 'Control', ctrlKey: true }));
+							recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+002B', ctrlKey: true }));
+							recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+002B', ctrlKey: true }));
+							recorder.recordEvent(createEvent({ type: 'keyup', key: 'Control', ctrlKey: false }));
 							assert.isTrue(recorder.recording,
 								'toggleState hotkey should work even if recording is off');
 						},
@@ -600,11 +600,11 @@ define(function (require) {
 							assert.isFalse(recorder.recording);
 
 							mock(recorder, 'insertCallback');
-							recorder.setHotkey('insertCallback', { keyIdentifier: 'U+002B', ctrlKey: true });
-							recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'Control', ctrlKey: true }));
-							recorder.recordEvent(createEvent({ type: 'keydown', keyIdentifier: 'U+002B', ctrlKey: true }));
-							recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'U+002B', ctrlKey: true }));
-							recorder.recordEvent(createEvent({ type: 'keyup', keyIdentifier: 'Control', ctrlKey: false }));
+							recorder.setHotkey('insertCallback', { key: 'U+002B', ctrlKey: true });
+							recorder.recordEvent(createEvent({ type: 'keydown', key: 'Control', ctrlKey: true }));
+							recorder.recordEvent(createEvent({ type: 'keydown', key: 'U+002B', ctrlKey: true }));
+							recorder.recordEvent(createEvent({ type: 'keyup', key: 'U+002B', ctrlKey: true }));
+							recorder.recordEvent(createEvent({ type: 'keyup', key: 'Control', ctrlKey: false }));
 							assert.lengthOf(recorder.insertCallback.calls, 0,
 								'other hotkeys should not do anything when recording is off');
 						}
@@ -663,7 +663,7 @@ define(function (require) {
 			},
 
 			'#setHotkey': function () {
-				var expected = { keyIdentifier: 'Foo' };
+				var expected = { key: 'Foo' };
 
 				devToolsPort.postMessage.clear();
 				recorder.setHotkey('insertCallback', expected);
