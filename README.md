@@ -1,6 +1,12 @@
-# ![Intern Recorder](https://theintern.github.io/recorder/images/readme-logo.png)
+# Intern Recorder
 
-[![CI status](https://travis-ci.org/theintern/recorder.svg)](https://travis-ci.org/theintern/recorder)
+<!-- start-github-only -->
+<br><p align="center"><img src="https://cdn.rawgit.com/theintern/recorder/master/docs/logo.svg" alt="Intern Recorder logo" height="128"></p><br>
+<!-- end-github-only -->
+
+<!-- start-github-only -->
+[![CI status](https://travis-ci.org/theintern/recorder.svg)](https://travis-ci.org/theintern/recorder) <!-- end-github-only --> 
+[![Intern](https://theintern.io/images/intern-v3.svg)](https://github.com/theintern/intern/)
 
 The Intern Recorder is a Chrome Developer Tools extension that assists in the creation of functional tests for Web applications by automatically recording user interaction with a browser into a format compatible with the Intern testing framework.
 
@@ -60,8 +66,10 @@ The recorder itself is maintained in the background script, which has access to 
 
 A very special thanks to [SITA](http://www.sita.aero/) for sponsoring work on the first release of the Intern Recorder.
 
+<!-- start-github-only -->
 ## Licensing
 
-Intern Recorder is a Dojo Foundation project offered under the [New BSD](https://github.com/theintern/recorder/blob/master/LICENSE) license.
+Intern Recorder is a JS Foundation project offered under the [New BSD](LICENSE) license.
 
 © [SitePen, Inc.](http://sitepen.com/) and its [contributors](https://github.com/theintern/recorder/graphs/contributors)
+<!-- end-github-only -->
