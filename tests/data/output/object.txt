@@ -1,0 +1,10 @@
+define(function (require) {
+	var registerSuite = require('intern!object');
+	registerSuite({
+		name: 'recorder-generated suite',
+		'Test 1': function () {
+			return this.remote
+				.get('http://example.com');
+		}
+	});
+});
