@@ -13,6 +13,7 @@ module.exports = {
 		path: join(__dirname, 'build'),
 		filename: join('lib', '[name].js')
 	},
+	devtool: 'source-map',
 	module: {
 		rules: [
 			{
@@ -33,6 +34,7 @@ module.exports = {
 				{ from: 'resources', to: 'resources' },
 				{ from: 'lib', to: 'lib' },
 				{ from: 'manifest.json' },
+				{ from: 'LICENSE' },
 				{ from: 'docs', to: 'docs' }
 			],
 			{ ignore: ['.DS_Store'] }
