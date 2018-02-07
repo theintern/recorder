@@ -322,10 +322,6 @@ export default class Recorder {
 
 	_injectContentScript() {
 		this.chrome.tabs.executeScript(this.tabId, {
-			file: 'lib/EventProxy.js',
-			allFrames: true
-		});
-		this.chrome.tabs.executeScript(this.tabId, {
 			file: 'lib/content.js',
 			allFrames: true
 		});
