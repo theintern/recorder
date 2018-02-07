@@ -8,11 +8,37 @@
 		"url": "https://github.com/theintern/recorder.git"
 	},
 	"devDependencies": {
-		"dojo": "2.0.0-alpha.6",
-		"intern": "3.0.0-rc.3"
+		"@theintern/dev": "~0.6.2",
+		"@types/chrome": "0.0.59",
+		"commander": "~2.14.0",
+		"copy-webpack-plugin": "~4.3.1",
+		"intern": "~4.1.5",
+		"ts-loader": "~3.4.0",
+		"ts-node": "~4.1.0",
+		"webpack": "~3.10.0"
 	},
 	"bugs": "https://github.com/theintern/intern/issues",
-	"keywords": [ "javascript", "test", "unit", "testing", "ci", "continuous integration", "bdd", "tdd", "xunit", "istanbul", "chai", "dojo", "toolkit", "selenium", "sauce labs", "code coverage", "recorder", "functional", "webdriver" ],
+	"keywords": [
+		"javascript",
+		"test",
+		"unit",
+		"testing",
+		"ci",
+		"continuous integration",
+		"bdd",
+		"tdd",
+		"xunit",
+		"istanbul",
+		"chai",
+		"dojo",
+		"toolkit",
+		"selenium",
+		"sauce labs",
+		"code coverage",
+		"recorder",
+		"functional",
+		"webdriver"
+	],
 	"homepage": "http://theintern.io/",
 	"scripts": {
 		"test": "intern-client config=tests/intern"

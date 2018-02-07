@@ -13,3 +13,5 @@ tests/*
 .git/*
 .gitignore
 .zipignore
+build
+build/*

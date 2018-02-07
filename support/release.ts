@@ -1,7 +1,3 @@
-#!/usr/bin/env bash
-
-set -e
-
 MATCH_VERSION="[0-9]\+\(\.[0-9]\+\)\{2,\}"
 
 usage() {

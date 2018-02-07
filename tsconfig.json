@@ -1,0 +1,12 @@
+{
+	"extends": "./node_modules/@theintern/dev/tsconfig-base.json",
+	"compilerOptions": {
+		"importHelpers": true,
+		"lib": ["es2015", "dom"],
+		"module": "es2015",
+        "target": "es2015",
+		"outDir": "./build",
+        "types": ["chrome"]
+	},
+	"include": ["src/**/**.ts"]
+}

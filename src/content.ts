@@ -1,5 +1,6 @@
-/* global EventProxy:false, chrome:false */
-var eventProxy;
+import EventProxy from './EventProxy';
+
+let eventProxy: EventProxy | undefined;
 
 if (!eventProxy) {
 	eventProxy = new EventProxy(window, document, chrome);
