@@ -27,11 +27,15 @@ module.exports = {
 	plugins: [
 		// minify
 		// new webpack.optimize.UglifyJsPlugin()
-		new CopyWebpackPlugin([
-			{ from: 'lib', to: 'lib' },
-			{ from: 'resources', to: 'resources' },
-			{ from: 'lib', to: 'lib' },
-			{ from: 'manifest.json' }
-		])
+		new CopyWebpackPlugin(
+			[
+				{ from: 'lib', to: 'lib' },
+				{ from: 'resources', to: 'resources' },
+				{ from: 'lib', to: 'lib' },
+				{ from: 'manifest.json' },
+				{ from: 'docs', to: 'docs' }
+			],
+			{ ignore: ['.DS_Store'] }
+		)
 	]
 };
