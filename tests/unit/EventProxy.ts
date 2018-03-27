@@ -1,15 +1,14 @@
-define(function (require) {
-	var assert = require('intern/chai!assert');
-	var createMockMethod = require('../support/util').createMockMethod;
-	var lang = require('dojo/lang');
-	var mock = require('../support/util').mock;
-	var mockChromeApi = require('../support/mockChromeApi');
-	var mockDomApi = require('../support/mockDomApi');
-	var registerSuite = require('intern!object');
-	var EventProxy = require('lib/EventProxy');
+import { mock } from '../support/util';
+import MockChrome, { Port } from '../support/mockChromeApi';
+import MockWindow, { Document, Event, Element } from '../support/mockDomApi';
+import EventProxy from '../../src/EventProxy';
 
-	function createEvent(event) {
-		return lang.mixin({
+const { assert } = intern.getPlugin('chai');
+const { registerSuite } = intern.getPlugin('interface.object');
+
+function createEvent(event?: Event) {
+	return Object.assign(
+		{
 			altKey: false,
 			button: 0,
 			buttons: 0,
@@ -23,7 +22,7 @@ define(function (require) {
 			metaKey: false,
 			shiftKey: false,
 			target: {
-				getBoundingClientRect: function () {
+				getBoundingClientRect: function() {
 					return { left: 1, top: 2 };
 				},
 				nodeName: 'SINGLE',
@@ -31,96 +30,127 @@ define(function (require) {
 				tagName: 'SINGLE'
 			},
 			type: 'mousemove'
-		}, event);
-	}
+		},
+		event
+	);
+}
 
-	registerSuite(function () {
-		var chrome;
-		var document;
-		var eventProxyPort;
-		var eventProxy;
-		var window;
+registerSuite('EventProxy', () => {
+	let chrome: MockChrome;
+	let document: Document;
+	let eventProxyPort: Port;
+	let eventProxy: EventProxy;
+	let window: MockWindow;
 
-		return {
-			name: 'EventProxy',
+	return {
+		beforeEach() {
+			chrome = new MockChrome();
+			window = new MockWindow('');
+			document = window.document;
+			eventProxy = new EventProxy(
+				<any>window,
+				<any>document,
+				<any>chrome
+			);
+			eventProxy.connect();
+			eventProxy.setStrategy('xpath');
+			// eventProxy.port will have come from the mock Chrome, so it will be a Port
+			eventProxyPort = <any>eventProxy.port!;
+		},
 
-			beforeEach: function () {
-				chrome = mockChromeApi.createChrome();
-				window = mockDomApi.createWindow();
-				document = window.document;
-				eventProxy = new EventProxy(window, document, chrome);
-				eventProxy.connect();
-				eventProxy.setStrategy('xpath');
-				eventProxyPort = eventProxy.port;
-			},
+		after() {
+			(<any>chrome) = (<any>window) = (<any>eventProxy) = (<any>eventProxyPort) = null;
+		},
 
-			teardown: function () {
-				chrome = window = eventProxy = eventProxyPort = null;
-			},
-
-			'port communication': function () {
-				assert.throws(function () {
+		tests: {
+			'port communication'() {
+				assert.throws(function() {
 					eventProxyPort.onMessage.emit({ method: 'not-a-method' });
 				}, 'Method "not-a-method" does not exist');
 
-				mock(eventProxy, 'setStrategy');
-				eventProxyPort.onMessage.emit({ method: 'setStrategy', args: [ 'foo' ] });
+				const { method: setStrategy } = mock(eventProxy, 'setStrategy');
+				eventProxyPort.onMessage.emit({
+					method: 'setStrategy',
+					args: ['foo']
+				});
 				eventProxyPort.onMessage.emit({ method: 'setStrategy' });
-				assert.deepEqual(eventProxy.setStrategy.calls, [
-					[ 'foo' ],
-					[]
-				], 'Valid calls from communication port should be executed on the proxy');
+				assert.deepEqual(
+					setStrategy.calls,
+					[['foo'], []],
+					'Valid calls from communication port should be executed on the proxy'
+				);
 			},
 
-			'port disconnect/reconnect': function () {
+			'port disconnect/reconnect': function() {
 				assert.ok(eventProxy.port);
 				assert.lengthOf(eventProxyPort.disconnect.calls, 0);
 				eventProxy.connect();
 				assert.lengthOf(eventProxyPort.disconnect.calls, 1);
-				assert.notStrictEqual(eventProxyPort, eventProxy.port, 'Reconnection should replace an existing port');
+				assert.notStrictEqual(
+					eventProxyPort,
+					<any>eventProxy.port,
+					'Reconnection should replace an existing port'
+				);
 
-				var newProxyPort = eventProxy.port;
+				const newProxyPort: Port = <any>eventProxy.port!;
 				eventProxyPort.postMessage.clear();
 				newProxyPort.postMessage.clear();
 				document.dispatchEvent(createEvent());
 
-				assert.lengthOf(eventProxyPort.postMessage.calls, 0, 'Old port should not receive events');
-				assert.lengthOf(newProxyPort.postMessage.calls, 1, 'New port should receive events');
+				assert.lengthOf(
+					eventProxyPort.postMessage.calls,
+					0,
+					'Old port should not receive events'
+				);
+				assert.lengthOf(
+					newProxyPort.postMessage.calls,
+					1,
+					'New port should receive events'
+				);
 			},
 
 			'send event': {
-				'top window': function () {
-					var detail = { test: true };
+				'top window': function() {
+					const detail = { test: true };
 
 					eventProxyPort.postMessage.clear();
 					eventProxy.send(detail);
 					assert.deepEqual(eventProxyPort.postMessage.calls, [
-						[ { method: 'recordEvent', args: [ detail ] } ]
+						[{ method: 'recordEvent', args: [detail] }]
 					]);
 				},
 
-				'inline frame sender': function () {
-					var detail = { test: true };
-					var childWindow = mockDomApi.createWindow(null, true);
-					var childEventProxy = new EventProxy(childWindow, childWindow.document, chrome);
+				'inline frame sender': function() {
+					const detail = { test: true };
+					const childWindow = new MockWindow(null, true);
+					const childEventProxy = new EventProxy(
+						<any>childWindow,
+						<any>childWindow.document,
+						<any>chrome
+					);
 					childEventProxy.connect();
 					childEventProxy.setStrategy('xpath');
 
-					var childEventProxyPort = childEventProxy.port;
+					const childEventProxyPort: Port = <any>childEventProxy.port!;
 					childEventProxy.send(detail);
-					assert.lengthOf(childEventProxyPort.postMessage.calls, 0,
-						'Messages from child frames should not go to the chrome runtime port');
-					assert.deepEqual(childWindow.parent.postMessage.calls, [
-						[ { method: 'recordEvent', detail: detail }, '*' ]
-					], 'Messages from child frames should be sent to parent window');
+					assert.lengthOf(
+						childEventProxyPort.postMessage.calls,
+						0,
+						'Messages from child frames should not go to the chrome runtime port'
+					);
+					assert.deepEqual(
+						childWindow.parent.postMessage.calls,
+						[[{ method: 'recordEvent', detail: detail }, '*']],
+						'Messages from child frames should be sent to parent window'
+					);
 				},
 
-				'inline frame recipient': function () {
-					mock(eventProxy, 'send');
+				'inline frame recipient': function() {
+					const { method: send } = mock(eventProxy, 'send');
 
-					var sourceWindow = {};
+					const sourceWindow = new MockWindow(null);
 
-					window.frames = [ {}, sourceWindow ];
+					window.frames = [new MockWindow(null), sourceWindow];
 					window.dispatchEvent({
 						data: null,
 						type: 'message',
@@ -137,121 +167,161 @@ define(function (require) {
 						source: sourceWindow
 					});
 
-					assert.lengthOf(eventProxy.send.calls, 0,
-						'Unrelated or malformed messages should not be processed');
+					assert.lengthOf(
+						send.calls,
+						0,
+						'Unrelated or malformed messages should not be processed'
+					);
 
 					window.dispatchEvent({
-						data: { method: 'recordEvent', detail: { target: '/HTML/BODY[1]', targetFrame: [] } },
+						data: {
+							method: 'recordEvent',
+							detail: { target: '/HTML/BODY[1]', targetFrame: [] }
+						},
 						type: 'message',
 						source: sourceWindow
 					});
 
-					assert.deepEqual(eventProxy.send.calls, [ [ { target: '/HTML/BODY[1]', targetFrame: [ 1 ] } ] ]);
+					assert.deepEqual(send.calls, [
+						[{ target: '/HTML/BODY[1]', targetFrame: [1] }]
+					]);
 				}
 			},
 
-			'#getElementTextPath': function () {
-				var element = {
+			'#getElementTextPath': function() {
+				const element1 = new Element({
 					nodeName: 'BODY',
 					parentNode: document.documentElement,
-					previousElementSibling: {
+					previousElementSibling: new Element({
 						nodeName: 'HEAD',
 						parentNode: document.documentElement
-					},
+					}),
 					stringValue: 'Hello, world'
-				};
+				});
 
 				assert.strictEqual(
-					eventProxy.getElementTextPath(element),
+					eventProxy.getElementTextPath(<any>element1),
 					'/HTML/BODY[1][normalize-space(string())="Hello, world"]'
 				);
 
-				element = {
+				const element2 = new Element({
 					nodeName: 'SINGLE',
 					parentNode: document.documentElement,
-					previousElementSibling: {
+					previousElementSibling: new Element({
 						nodeName: 'HEAD',
 						parentNode: document.documentElement
-					},
+					}),
 					stringValue: 'Hello, world'
-				};
+				});
 
 				assert.strictEqual(
-					eventProxy.getElementTextPath(element),
+					eventProxy.getElementTextPath(<any>element2),
 					'//SINGLE[normalize-space(string())="Hello, world"]'
 				);
 			},
 
-			'#getElementXPath': function () {
-				var body = {
+			'#getElementXPath': function() {
+				const body = new Element({
 					nodeName: 'BODY',
 					parentNode: document.documentElement,
-					previousElementSibling: {
+					previousElementSibling: new Element({
 						nodeName: 'HEAD',
 						parentNode: document.documentElement
-					}
-				};
+					})
+				});
 
-				var element = {
+				const element1 = new Element({
 					nodeName: 'DIV',
 					parentNode: body,
-					previousElementSibling: {
+					previousElementSibling: new Element({
 						nodeName: 'DIV',
 						parentNode: body
-					}
-				};
+					})
+				});
 
-				assert.strictEqual(eventProxy.getElementXPath(element), '/HTML/BODY[1]/DIV[2]');
+				assert.strictEqual(
+					eventProxy.getElementXPath(<any>element1),
+					'/HTML/BODY[1]/DIV[2]'
+				);
 
-				element = {
+				const element2 = new Element({
 					id: 'test',
 					nodeName: 'DIV',
 					parentNode: body
-				};
+				});
 
-				assert.strictEqual(eventProxy.getElementXPath(element), 'id("test")');
-				assert.strictEqual(eventProxy.getElementXPath(element, true), '/HTML/BODY[1]/DIV');
+				assert.strictEqual(
+					eventProxy.getElementXPath(<any>element2),
+					'id("test")'
+				);
+				assert.strictEqual(
+					eventProxy.getElementXPath(<any>element2, true),
+					'/HTML/BODY[1]/DIV'
+				);
 			},
 
-			'click event': function () {
-				mock(eventProxy, 'send');
+			'click event': function() {
+				const { method: send } = mock(eventProxy, 'send');
 
-				document.dispatchEvent(createEvent({ type: 'mousedown', buttons: 1 }));
-				document.dispatchEvent(createEvent({ type: 'mouseup', clientX: 55, clientY: 55 }));
-				document.dispatchEvent(createEvent({ type: 'click', clientX: 55, clientY: 55 }));
+				document.dispatchEvent(
+					createEvent({ type: 'mousedown', buttons: 1 })
+				);
+				document.dispatchEvent(
+					createEvent({ type: 'mouseup', clientX: 55, clientY: 55 })
+				);
+				document.dispatchEvent(
+					createEvent({ type: 'click', clientX: 55, clientY: 55 })
+				);
 
-				assert.lengthOf(eventProxy.send.calls, 2,
-					'Click event should not be transmitted when it does not match heuristics for a click');
-				assert.propertyVal(eventProxy.send.calls[0][0], 'type', 'mousedown');
-				assert.propertyVal(eventProxy.send.calls[1][0], 'type', 'mouseup');
+				assert.lengthOf(
+					send.calls,
+					2,
+					'Click event should not be transmitted when it does not match heuristics for a click'
+				);
+				assert.propertyVal(send.calls[0][0], 'type', 'mousedown');
+				assert.propertyVal(send.calls[1][0], 'type', 'mouseup');
 
-				eventProxy.send.clear();
-				document.dispatchEvent(createEvent({ type: 'mousedown', buttons: 1 }));
+				send.clear();
+				document.dispatchEvent(
+					createEvent({ type: 'mousedown', buttons: 1 })
+				);
 				document.dispatchEvent(createEvent({ type: 'mouseup' }));
 				document.dispatchEvent(createEvent({ type: 'click' }));
 
-				assert.lengthOf(eventProxy.send.calls, 3,
-					'Click event should be transmitted when it matches heuristics for a click');
-				assert.propertyVal(eventProxy.send.calls[0][0], 'type', 'mousedown');
-				assert.propertyVal(eventProxy.send.calls[1][0], 'type', 'mouseup');
-				assert.propertyVal(eventProxy.send.calls[2][0], 'type', 'click');
+				assert.lengthOf(
+					send.calls,
+					3,
+					'Click event should be transmitted when it matches heuristics for a click'
+				);
+				assert.propertyVal(send.calls[0][0], 'type', 'mousedown');
+				assert.propertyVal(send.calls[1][0], 'type', 'mouseup');
+				assert.propertyVal(send.calls[2][0], 'type', 'click');
 
-				assert.strictEqual(eventProxy.send.calls[1][0].target, '/HTML/BODY[1]',
+				assert.strictEqual(
+					send.calls[1][0].target,
+					'/HTML/BODY[1]',
 					'Mouseup should not use the target the element under the mouse since ' +
-					'it may have been dragged and dropped and this action would be recorded incorrectly otherwise');
+						'it may have been dragged and dropped and this action would be recorded incorrectly otherwise'
+				);
 			},
 
-			'#setStrategy': function () {
-				assert.throws(function () {
+			'#setStrategy': function() {
+				assert.throws(function() {
 					eventProxy.setStrategy('invalid');
 				}, 'Invalid strategy');
 
 				eventProxy.setStrategy('xpath');
-				assert.strictEqual(eventProxy.getTarget, eventProxy.getElementXPath);
+				assert.strictEqual(
+					eventProxy.getTarget,
+					eventProxy.getElementXPath
+				);
 
 				eventProxy.setStrategy('text');
-				assert.strictEqual(eventProxy.getTarget, eventProxy.getElementTextPath);
+				assert.strictEqual(
+					eventProxy.getTarget,
+					eventProxy.getElementTextPath
+				);
 			}
-		};
-	});
+		}
+	};
 });

@@ -1,0 +1,13 @@
+{
+	"suites": "tests/build/tests.js",
+	"filterErrorStack": true,
+	"reporters": [
+		{
+			"name": "runner",
+			"options": {
+				"hidePassed": true,
+				"hideSkipped": true
+			}
+		}
+	]
+}

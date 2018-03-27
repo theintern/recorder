@@ -97,8 +97,8 @@ export default class EventProxy {
 		const matchesMultipleElements = Boolean(matchingElements.iterateNext());
 
 		if (matchesMultipleElements) {
-			// ignoring IDs because when the text strategy is being used it typically means that IDs are not
-			// deterministic
+			// Ignore IDs because when the text strategy is being used it
+			// typically means that IDs are not deterministic
 			path = this.getElementXPath(element, true) + path;
 		} else {
 			path = tagPrefix + path;
@@ -109,8 +109,11 @@ export default class EventProxy {
 
 	getElementXPath(element: Element, ignoreId?: boolean) {
 		const path = [];
+		let node: Node | null = element;
 
 		do {
+			element = <Element>node;
+
 			if (element.id && !ignoreId) {
 				path.unshift('id("' + element.id + '")');
 
@@ -140,7 +143,7 @@ export default class EventProxy {
 				// The root node
 				path.unshift('');
 			}
-		} while ((element = element.parentElement!));
+		} while ((node = element.parentNode));
 
 		return path.join('/');
 	}
@@ -249,8 +252,9 @@ export default class EventProxy {
 			clientY: event.clientY,
 			elementX: event.clientX - rect.left,
 			elementY: event.clientY - rect.top,
-			//key has not yet been implemented in Safari, which requires the deprecated keyIdentifier
-			//https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key#Browser_compatibility
+			// key has not yet been implemented in Safari, which requires the
+			// deprecated keyIdentifier
+			// https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key#Browser_compatibility
 			key: event.key || (<any>event).keyIdentifier,
 			location: event.location,
 			metaKey: event.metaKey,

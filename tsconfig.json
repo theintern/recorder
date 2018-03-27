@@ -4,9 +4,10 @@
 		"importHelpers": true,
 		"lib": ["es2015", "dom"],
 		"module": "es2015",
-        "target": "es2015",
+		"target": "es2015",
 		"outDir": "./build",
-        "types": ["chrome"]
+		"noErrorTruncation": true,
+		"types": ["chrome"]
 	},
 	"include": ["src/**/**.ts"]
 }

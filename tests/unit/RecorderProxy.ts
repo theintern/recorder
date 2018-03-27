@@ -1,138 +1,157 @@
-define(function (require) {
-	var assert = require('intern/chai!assert');
-	var createMockMethod = require('../support/util').createMockMethod;
-	var lang = require('dojo/lang');
-	var mock = require('../support/util').mock;
-	var mockChromeApi = require('../support/mockChromeApi');
-	var mockDomApi = require('../support/mockDomApi');
-	var registerSuite = require('intern!object');
-	var RecorderProxy = require('lib/RecorderProxy');
+import { mock } from '../support/util';
+import MockChrome, { Button, Panel, Port } from '../support/mockChromeApi';
+import MockWindow, { Event } from '../support/mockDomApi';
+import { createMockMethod, Method } from '../support/util';
+import RecorderProxy from '../../src/RecorderProxy';
 
-	var hotkeyIds = [ 'insertCallback', 'insertMouseMove', 'toggleState' ];
+const { assert } = intern.getPlugin('chai');
+const { registerSuite } = intern.getPlugin('interface.object');
 
-	function createEvent(event) {
-		if (!event || !event.key) {
-			throw new Error('At least "key" is required to generate an event object');
-		}
+const hotkeyIds = ['insertCallback', 'insertMouseMove', 'toggleState'];
 
-		return lang.mixin({
+interface TestEvent extends Event {
+	preventDefault: Method<() => void>;
+}
+
+function createEvent(event: { key: string; [key: string]: any }): TestEvent {
+	if (!event || !event.key) {
+		throw new Error(
+			'At least "key" is required to generate an event object'
+		);
+	}
+
+	return Object.assign(
+		{
+			type: 'keyboard',
 			altKey: false,
 			ctrlKey: false,
 			metaKey: false,
 			preventDefault: createMockMethod(),
 			shiftKey: false
-		}, event);
-	}
+		},
+		event
+	);
+}
 
-	registerSuite(function () {
-		var chrome;
-		var devToolsPort;
-		var panel;
-		var recorderProxy;
-		var window;
+registerSuite('RecorderProxy', () => {
+	let chrome: MockChrome;
+	let devToolsPort: Port;
+	let recorderProxy: RecorderProxy;
+	let panel: Panel;
+	let window: MockWindow;
 
-		return {
-			name: 'RecorderProxy',
+	return {
+		beforeEach() {
+			chrome = new MockChrome();
+			window = new MockWindow('');
+			panel = chrome.createPanel();
+			recorderProxy = new RecorderProxy(chrome, panel);
+			panel.onShown.emit(window);
 
-			beforeEach: function () {
-				chrome = mockChromeApi.createChrome();
-				window = mockDomApi.createWindow();
-				panel = mockChromeApi.createPanel();
-				recorderProxy = new RecorderProxy(chrome, panel);
-				panel.onShown.emit(window);
-				devToolsPort = recorderProxy._port;
-			},
+			// The recorderProxy's port will be a Port because it's coming from
+			// the mock chrome
+			devToolsPort = <Port>recorderProxy._port!;
+		},
 
-			teardown: function () {
-				chrome = window = recorderProxy = devToolsPort = null;
-			},
+		after() {
+			chrome = window = recorderProxy = devToolsPort = <any>null;
+		},
 
-			'port communication': function () {
+		tests: {
+			'port communication'() {
 				// TODO: Chai needs a deepInclude
-				assert.deepEqual(devToolsPort.postMessage.calls[0],
-					[ { method: 'setTabId', args: [ 1692485 ] } ],
-					'The proxy should send the currently inspected tab ID to the recorder immediately upon creation');
+				assert.deepEqual(
+					devToolsPort.postMessage.calls[0],
+					[{ method: 'setTabId', args: [1692485] }],
+					'The proxy should send the currently inspected tab ID ' +
+						'to the recorder immediately upon creation'
+				);
 
-				assert.throws(function () {
+				assert.throws(function() {
 					devToolsPort.onMessage.emit({ method: 'not-a-method' });
 				}, 'Method "not-a-method" does not exist');
 
-				mock(recorderProxy, 'setHotkey');
-				devToolsPort.onMessage.emit({ method: 'setHotkey', args: [ 'foo' ] });
+				const { method: setHotkey } = mock(recorderProxy, 'setHotkey');
+				devToolsPort.onMessage.emit({
+					method: 'setHotkey',
+					args: ['foo']
+				});
 				devToolsPort.onMessage.emit({ method: 'setHotkey' });
-				assert.deepEqual(recorderProxy.setHotkey.calls, [
-					[ 'foo' ],
-					[]
-				], 'Valid calls from communication port should be executed on the proxy');
+				assert.deepEqual(
+					setHotkey.calls,
+					[['foo'], []],
+					'Valid calls from communication port should be executed on the proxy'
+				);
 			},
 
-			'listener setup': function () {
-				hotkeyIds.forEach(function (id) {
-					var input = window.document.getElementById('hotkey-' + id);
+			'listener setup': function() {
+				hotkeyIds.forEach(function(id) {
+					const input = window.document.getElementById(
+						'hotkey-' + id
+					)!;
 					assert.isFunction(input.onkeydown);
 				});
 
-				var script = window.document.getElementById('script');
+				const script = window.document.getElementById('script')!;
 				assert.isFunction(script.oninput);
 
-				var strategy = window.document.getElementById('option-strategy');
+				const strategy = window.document.getElementById(
+					'option-strategy'
+				)!;
 				assert.isFunction(strategy.onchange);
 
-				var findDisplayed = window.document.getElementById('option-findDisplayed');
+				const findDisplayed = window.document.getElementById(
+					'option-findDisplayed'
+				)!;
 				assert.isFunction(findDisplayed.onchange);
 			},
 
-			'button communication': function () {
-				mock(recorderProxy, 'send');
+			'button communication': function() {
+				const { method: send } = mock(recorderProxy, 'send');
 
-				panel.buttons.forEach(function (button) {
+				panel.buttons.forEach(function(button) {
 					button.onClicked.emit();
 				});
 
-				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'toggleState' ],
-					[ 'clear' ],
-					[ 'newTest' ],
-					[ 'save' ]
+				assert.deepEqual(send.calls, [
+					['toggleState'],
+					['clear'],
+					['newTest'],
+					['save']
 				]);
 			},
 
-			'hide and show': function () {
-				mock(recorderProxy, 'send');
+			'hide and show': function() {
+				const { method: send } = mock(recorderProxy, 'send');
 
 				panel.onHidden.emit();
 				panel.onShown.emit(window);
-				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'refreshUi' ]
-				]);
+				assert.deepEqual(send.calls, [['refreshUi']]);
 
 				recorderProxy.setRecording(true);
 				assert.isTrue(recorderProxy.recording);
 
-				recorderProxy.send.clear();
+				send.clear();
 				panel.onHidden.emit();
-				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'toggleState' ]
-				]);
+				assert.deepEqual(send.calls, [['toggleState']]);
 
-				recorderProxy.send.clear();
+				send.clear();
 				panel.onShown.emit(window);
-				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'toggleState' ],
-					[ 'refreshUi' ]
-				]);
+				assert.deepEqual(send.calls, [['toggleState'], ['refreshUi']]);
 			},
 
-			'hotkey set': function () {
-				mock(recorderProxy, 'send');
+			'hotkey set': function() {
+				const { method: send } = mock(recorderProxy, 'send');
 
-				hotkeyIds.forEach(function (id) {
-					recorderProxy.send.clear();
+				hotkeyIds.forEach(function(id) {
+					send.clear();
 
-					var input = window.document.getElementById('hotkey-' + id);
+					const input = window.document.getElementById(
+						'hotkey-' + id
+					)!;
 					assert.isFunction(input.onkeydown);
 
-					var key = {
+					const key = {
 						altKey: false,
 						ctrlKey: false,
 						key: 'U+0045',
@@ -140,80 +159,90 @@ define(function (require) {
 						shiftKey: true
 					};
 
-					var event = createEvent(key);
-					input.onkeydown(event);
+					const event = createEvent(key);
+					input.onkeydown!(event);
 
 					assert.lengthOf(event.preventDefault.calls, 1);
 
-					assert.deepEqual(recorderProxy.send.calls, [
-						[ 'setHotkey', [ id, key ] ]
-					]);
+					assert.deepEqual(send.calls, [['setHotkey', [id, key]]]);
 				});
 			},
 
-			'script set': function () {
-				mock(recorderProxy, 'send');
+			'script set': function() {
+				const { method: send } = mock(recorderProxy, 'send');
 
 				recorderProxy.setScript('test');
 
-				var event = createEvent({ key: 'U+0020' });
-				window.document.getElementById('script').oninput(event);
-				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'setScript', [ 'test' ] ]
-				]);
+				const event = createEvent({ key: 'U+0020' });
+				window.document.getElementById('script')!.oninput!(event);
+				assert.deepEqual(send.calls, [['setScript', ['test']]]);
 			},
 
-			'strategy set': function () {
-				mock(recorderProxy, 'send');
+			'strategy set': function() {
+				const { method: send } = mock(recorderProxy, 'send');
 
 				recorderProxy.setScript('test');
 
-				window.document.getElementById('option-strategy').onchange({ target: { value: 'test' } });
-				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'setStrategy', [ 'test' ] ]
-				]);
+				window.document.getElementById('option-strategy')!.onchange!(
+					<any>{ target: { value: 'test' } }
+				);
+				assert.deepEqual(send.calls, [['setStrategy', ['test']]]);
 			},
 
-			'findDisplayed set': function () {
-				mock(recorderProxy, 'send');
+			'findDisplayed set': function() {
+				const { method: send } = mock(recorderProxy, 'send');
 
 				recorderProxy.setScript('test');
 
-				window.document.getElementById('option-findDisplayed').onchange({ target: { checked: true } });
-				assert.deepEqual(recorderProxy.send.calls, [
-					[ 'setFindDisplayed', [ true ] ]
-				]);
+				window.document.getElementById('option-findDisplayed')!
+					.onchange!(<any>{ target: { checked: true } });
+				assert.deepEqual(send.calls, [['setFindDisplayed', [true]]]);
 			},
 
-			'hidden panel': function () {
-				var inactiveRecorderProxy = new RecorderProxy(chrome, panel);
-				assert.doesNotThrow(function () {
+			'hidden panel': function() {
+				const inactiveRecorderProxy = new RecorderProxy(
+					<any>chrome,
+					<any>panel
+				);
+				assert.doesNotThrow(function() {
 					inactiveRecorderProxy.setScript('test');
-					inactiveRecorderProxy.setStrategy('test');
+					inactiveRecorderProxy.setStrategy(<any>'test');
 					inactiveRecorderProxy.setFindDisplayed(true);
-					inactiveRecorderProxy.setHotkey('insertCallback', { key: 'U+0045' });
+					inactiveRecorderProxy.setHotkey('insertCallback', {
+						key: 'U+0045'
+					});
 				}, 'Setting properties for the UI without an active panel should be a no-op');
 			},
 
-			'#send': function () {
+			'#send': function() {
 				devToolsPort.postMessage.clear();
-				recorderProxy.send('test', [ 'arg1', 'argN' ]);
+				recorderProxy.send('test', ['arg1', 'argN']);
 				assert.deepEqual(devToolsPort.postMessage.calls, [
-					[ { method: 'test', args: [ 'arg1', 'argN' ] } ]
+					[{ method: 'test', args: ['arg1', 'argN'] }]
 				]);
 			},
 
-			'#setFindDisplayed': function () {
+			'#setFindDisplayed': function() {
 				recorderProxy.setFindDisplayed(true);
-				assert.strictEqual(window.document.getElementById('option-findDisplayed').checked, true);
+				assert.strictEqual(
+					window.document.getElementById('option-findDisplayed')!
+						.checked,
+					true
+				);
 			},
 
 			'#setHotkey': {
-				'basic tests': function () {
-					var testKeys = [
+				'basic tests': function() {
+					const testKeys = [
 						{
 							id: 'insertCallback',
-							key: { altKey: true, metaKey: true, ctrlKey: true, shiftKey: true, key: 'U+0045' },
+							key: {
+								altKey: true,
+								metaKey: true,
+								ctrlKey: true,
+								shiftKey: true,
+								key: 'U+0045'
+							},
 							others: 'Ctrl+Alt+Shift+Win+E',
 							mac: '^⌥⇧⌘E'
 						},
@@ -243,58 +272,91 @@ define(function (require) {
 						}
 					];
 
-					var macPanel = mockChromeApi.createPanel();
-					var macWindow = mockDomApi.createWindow('MacIntel');
-					var macRecorderProxy = new RecorderProxy(mockChromeApi.createChrome(), macPanel);
+					const macPanel = chrome.createPanel();
+					const macWindow = new MockWindow('MacIntel');
+					const macChrome = new MockChrome();
+					const macRecorderProxy = new RecorderProxy(
+						<any>macChrome,
+						<any>macPanel
+					);
 					macPanel.onShown.emit(macWindow);
 
-					testKeys.forEach(function (key) {
+					testKeys.forEach(function(key) {
 						recorderProxy.setHotkey(key.id, key.key);
 						macRecorderProxy.setHotkey(key.id, key.key);
-						assert.strictEqual(window.document.getElementById('hotkey-' + key.id).value, key.others);
-						assert.strictEqual(macWindow.document.getElementById('hotkey-' + key.id).value, key.mac);
+						assert.strictEqual(
+							window.document.getElementById('hotkey-' + key.id)!
+								.value,
+							key.others
+						);
+						assert.strictEqual(
+							macWindow.document.getElementById(
+								'hotkey-' + key.id
+							)!.value,
+							key.mac
+						);
 					});
 
-					assert.throws(function () {
-						recorderProxy.setHotkey('invalid', {});
+					assert.throws(function() {
+						recorderProxy.setHotkey('invalid', <any>{});
 					}, 'missing input for hotkey "invalid"');
 				},
 
-				'crbug 48111': function () {
-					recorderProxy.setHotkey('insertCallback', { key: 'U+00C0' });
-					assert.strictEqual(window.document.getElementById('hotkey-insertCallback').value, '`');
-					recorderProxy.setHotkey('insertCallback', { shiftKey: true, key: 'U+00C0' });
-					assert.strictEqual(window.document.getElementById('hotkey-insertCallback').value, '~');
+				'crbug 48111': function() {
+					recorderProxy.setHotkey('insertCallback', {
+						key: 'U+00C0'
+					});
+					assert.strictEqual(
+						window.document.getElementById('hotkey-insertCallback')!
+							.value,
+						'`'
+					);
+					recorderProxy.setHotkey('insertCallback', {
+						shiftKey: true,
+						key: 'U+00C0'
+					});
+					assert.strictEqual(
+						window.document.getElementById('hotkey-insertCallback')!
+							.value,
+						'~'
+					);
 				}
 			},
 
-			'#setRecording': function () {
-				var recordButton = recorderProxy._recordButton;
+			'#setRecording': function() {
+				const recordButton: Button = <any>recorderProxy._recordButton!;
 
 				assert.isFalse(recorderProxy.recording);
 				recorderProxy.setRecording(true);
 				assert.isTrue(recorderProxy.recording);
 				assert.deepEqual(recordButton.update.calls, [
-					[ 'resources/statusBarIcons/record_on.png' ]
+					['resources/statusBarIcons/record_on.png']
 				]);
 				recordButton.update.clear();
 				recorderProxy.setRecording(false);
 				assert.isFalse(recorderProxy.recording);
 				assert.deepEqual(recordButton.update.calls, [
-					[ 'resources/statusBarIcons/record_off.png' ]
+					['resources/statusBarIcons/record_off.png']
 				]);
 			},
 
-			'#setScript': function () {
+			'#setScript': function() {
 				recorderProxy.setScript('test');
-				recorderProxy.setScript(null);
-				assert.strictEqual(window.document.getElementById('script').value, 'test');
+				// Setting script to null should have no effect
+				recorderProxy.setScript(<any>null);
+				assert.strictEqual(
+					window.document.getElementById('script')!.value,
+					'test'
+				);
 			},
 
-			'#setStrategy': function () {
+			'#setStrategy': function() {
 				recorderProxy.setStrategy('xpath');
-				assert.strictEqual(window.document.getElementById('option-strategy').value, 'xpath');
+				assert.strictEqual(
+					window.document.getElementById('option-strategy')!.value,
+					'xpath'
+				);
 			}
-		};
-	});
+		}
+	};
 });

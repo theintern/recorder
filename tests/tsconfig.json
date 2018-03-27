@@ -1,0 +1,10 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"lib": ["es2015", "dom"],
+		"module": "commonjs",
+		"outDir": "./_tests",
+		"types": ["intern", "chrome"]
+	},
+	"include": ["./**/**.ts"]
+}

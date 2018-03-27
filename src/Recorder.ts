@@ -1,5 +1,6 @@
 import {
-	Chrome,
+	ChromeLike,
+	PortLike,
 	HotKeyDef,
 	Message,
 	RecorderPort,
@@ -8,17 +9,19 @@ import {
 } from './types';
 
 export default class Recorder {
-	chrome: Chrome;
+	chrome: ChromeLike;
 	storage: Storage;
 	hotkeys: HotKeys;
 	strategy: Strategy;
-	findDisplayed: string;
+	findDisplayed: string | false;
+	recording: boolean;
+	tabId: number | undefined | null;
 
 	_currentModifiers: { [modifier: string]: boolean };
 	_currentTest: Test | null;
 	_findCommand: 'findDisplayedByXpath' | 'findByXpath';
 	_ignoreKeyups: { [key: string]: boolean };
-	_lastMouseMove: RecorderEvent | null;
+	_lastMouseMove: RecorderMouseEvent | null;
 	_lastTarget: Element | null;
 	_lastTargetFrame: number[];
 	_lastTestId: 0;
@@ -30,12 +33,10 @@ export default class Recorder {
 	// connects to a RecorderProxy instance representing the "Intern" panel in Chrome devtools
 	_port: RecorderPort | null;
 
-	recording: boolean;
 	_script: string;
 	_scriptTree: Test[];
-	tabId: number;
 
-	constructor(chrome: Chrome, storage: Storage) {
+	constructor(chrome?: ChromeLike, storage?: Storage) {
 		if (chrome == null) {
 			throw new Error('Chrome API must be provided to recorder');
 		}
@@ -53,9 +54,11 @@ export default class Recorder {
 			: this._getDefaultHotkeys();
 
 		this.strategy = <Strategy>storage.getItem('intern.strategy') || 'xpath';
-		this.findDisplayed = storage.getItem('intern.findDisplayed') || '';
+		this.findDisplayed = storage.getItem('intern.findDisplayed') || false;
 
 		this.recording = false;
+		this.tabId = null;
+		this._findCommand = 'findByXpath';
 
 		this._initializeScript();
 		this._initializePort();
@@ -141,7 +144,7 @@ export default class Recorder {
 		};
 	}
 
-	_handleHotkeyEvent(event: RecorderEvent) {
+	_handleHotkeyEvent(event: RecorderKeyboardEvent) {
 		if (event.type !== 'keydown') {
 			return;
 		}
@@ -214,10 +217,7 @@ export default class Recorder {
 		// two ports are received, one from the event proxy (injected page script) and one from the recorder proxy
 		// (devtools panel script)
 		this.chrome.runtime.onConnect.addListener(port => {
-			const receiveMessage = (
-				message: object,
-				_port: chrome.runtime.Port
-			) => {
+			const receiveMessage = (message: object, _port: PortLike) => {
 				const msg = <Message>message;
 				const method = <keyof Recorder>msg.method;
 				if (!this[method]) {
@@ -321,7 +321,11 @@ export default class Recorder {
 	}
 
 	_injectContentScript() {
-		this.chrome.tabs.executeScript(this.tabId, {
+		this.chrome.tabs.executeScript(this.tabId!, {
+			file: 'lib/EventProxy.js',
+			allFrames: true
+		});
+		this.chrome.tabs.executeScript(this.tabId!, {
 			file: 'lib/content.js',
 			allFrames: true
 		});
@@ -381,13 +385,16 @@ export default class Recorder {
 	}
 
 	recordEvent(event: RecorderEvent) {
-		if (this._handleHotkeyEvent(event)) {
+		if (this._handleHotkeyEvent(<RecorderKeyboardEvent>event)) {
 			return;
 		}
 
 		if (!this.recording) {
 			return;
 		}
+
+		const mouseEvent = <RecorderMouseEvent>event;
+		const keyboardEvent = <RecorderKeyboardEvent>event;
 
 		switch (event.type) {
 			case 'click':
@@ -400,11 +407,12 @@ export default class Recorder {
 				// hysteresis
 				this._record(
 					'moveMouseTo',
-					[event.elementX, event.elementY],
+					[mouseEvent.elementX, mouseEvent.elementY],
 					1
 				);
-				this._record('clickMouseButton', [event.button], 1);
+				this._record('clickMouseButton', [mouseEvent.button], 1);
 				break;
+
 			case 'dblclick':
 				// click (2), click (2)
 				this._eraseThrough('clickMouseButton');
@@ -417,58 +425,63 @@ export default class Recorder {
 				// hysteresis
 				this._record(
 					'moveMouseTo',
-					[event.elementX, event.elementY],
+					[mouseEvent.elementX, mouseEvent.elementY],
 					1
 				);
 				this._record('doubleClick', null, 1);
 				break;
+
 			case 'keydown':
-				if (isModifierKey(event.key)) {
-					this._currentModifiers[event.key] = true;
+				if (isModifierKey(keyboardEvent.key)) {
+					this._currentModifiers[keyboardEvent.key] = true;
 				}
 
-				this._recordKey(event);
+				this._recordKey(keyboardEvent);
 				break;
+
 			case 'keyup':
-				if (this._ignoreKeyups[event.key]) {
-					delete this._ignoreKeyups[event.key];
-					delete this._currentModifiers[event.key];
+				if (this._ignoreKeyups[keyboardEvent.key]) {
+					delete this._ignoreKeyups[keyboardEvent.key];
+					delete this._currentModifiers[keyboardEvent.key];
 					return;
 				}
 
-				if (isModifierKey(event.key)) {
-					delete this._currentModifiers[event.key];
-					this._recordKey(event);
+				if (isModifierKey(keyboardEvent.key)) {
+					delete this._currentModifiers[keyboardEvent.key];
+					this._recordKey(keyboardEvent);
 				}
 				break;
+
 			case 'mousedown':
-				this._recordTarget(event);
+				this._recordTarget(mouseEvent);
 				this._record(
 					'moveMouseTo',
-					[event.elementX, event.elementY],
+					[mouseEvent.elementX, mouseEvent.elementY],
 					1
 				);
-				this._record('pressMouseButton', [event.button], 1);
+				this._record('pressMouseButton', [mouseEvent.button], 1);
 				// The extra mouse move works around issues with DnD implementations like dojo/dnd where they
 				// require at least one mouse move over the source element in order to activate
 				this._recordNextMouseMove = true;
 				break;
+
 			case 'mousemove':
-				this._lastMouseMove = event;
+				this._lastMouseMove = mouseEvent;
 				if (this._recordNextMouseMove) {
 					this._recordNextMouseMove = false;
 					this.insertMouseMove();
 				}
 				break;
+
 			case 'mouseup':
 				this._recordNextMouseMove = false;
-				this._recordTarget(event);
+				this._recordTarget(mouseEvent);
 				this._record(
 					'moveMouseTo',
-					[event.elementX, event.elementY],
+					[mouseEvent.elementX, mouseEvent.elementY],
 					1
 				);
-				this._record('releaseMouseButton', [event.button], 1);
+				this._record('releaseMouseButton', [mouseEvent.button], 1);
 				break;
 		}
 
@@ -495,7 +508,7 @@ export default class Recorder {
 		this._renderScriptTree();
 	}
 
-	_recordKey(event: RecorderEvent) {
+	_recordKey(event: RecorderKeyboardEvent) {
 		const suppressesShift = (key: string) => {
 			const code = key.charCodeAt(0);
 			if (code >= 0xe000 && code <= 0xf8ff) {
@@ -538,7 +551,7 @@ export default class Recorder {
 		}
 	}
 
-	_recordTarget(event: RecorderEvent | null) {
+	_recordTarget(event: RecorderMouseEvent | null) {
 		const checkTargetFrameChanged = () => {
 			if (evt.targetFrame.length !== lastTargetFrame.length) {
 				return true;
@@ -578,7 +591,7 @@ export default class Recorder {
 				this._record(this._findCommand, [evt.target]);
 			}
 
-			this._lastTarget = evt.target;
+			this._lastTarget = <Element>evt.target;
 		}
 	}
 
@@ -630,9 +643,9 @@ export default class Recorder {
 		);
 	}
 
-	setFindDisplayed(value: string) {
-		this.storage.setItem('intern.findDisplayed', value);
-		this.findDisplayed = value;
+	setFindDisplayed(value: boolean) {
+		const valueStr = value ? 'true' : 'false';
+		this.storage.setItem('intern.findDisplayed', valueStr);
 		this._findCommand = value ? 'findDisplayedByXpath' : 'findByXpath';
 	}
 
@@ -678,19 +691,27 @@ export default class Recorder {
 	}
 }
 
-interface RecorderEvent {
+export interface RecorderEvent {
 	type: string;
-	elementX: number;
-	elementY: number;
 	targetFrame: number[];
-	key: string;
-	button: number;
-	location: number;
-	shiftKey: boolean;
-	target: Element;
 }
 
-interface HotKeys {
+export interface RecorderMouseEvent extends RecorderEvent {
+	elementX: number;
+	elementY: number;
+	button: number;
+	buttons: number;
+	target: string | Element;
+}
+
+export interface RecorderKeyboardEvent extends RecorderEvent {
+	key: string;
+	location: number;
+	ctrlKey: boolean;
+	shiftKey: boolean;
+}
+
+export interface HotKeys {
 	insertCallback: HotKeyDef;
 	insertMouseMove: HotKeyDef;
 	toggleState: HotKeyDef;
@@ -883,12 +904,12 @@ function isModifierKey(key: string) {
 const TEMPLATES = {
 	suiteOpen: [
 		'define(function (require) {',
-		`	var tdd = require('intern!tdd');`,
-		`	tdd.suite('recorder-generated suite', function () {`,
+		"	var tdd = require('intern!tdd');",
+		"	tdd.suite('recorder-generated suite', function () {",
 		''
 	].join('\n'),
 	suiteClose: ['	});', '});', ''].join('\n'),
-	testOpen: [`		tdd.test('$NAME', function () {`, '			return this.remote'].join(
+	testOpen: ["		tdd.test('$NAME', function () {", '			return this.remote'].join(
 		'\n'
 	),
 	testClose: [';', '		});', ''].join('\n')

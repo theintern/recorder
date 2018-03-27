@@ -1,20 +1,30 @@
-import { Chrome, HotKeyDef, Message, Strategy } from './types';
+import {
+	HotKeyDef,
+	Message,
+	Strategy,
+	ChromeLike,
+	PanelLike,
+	PortLike,
+	ButtonLike
+} from './types';
 
 export default class RecorderProxy {
-	chrome: Chrome;
+	chrome: ChromeLike;
 	contentWindow: Window | null;
-	panel: chrome.devtools.panels.ExtensionPanel;
-	_port: chrome.runtime.Port | null;
-	recording: boolean;
-	_recordButton: chrome.devtools.panels.Button | null;
-	_script: HTMLInputElement | null;
-	_toggleOnShow: boolean;
+	panel: PanelLike;
+	recording: boolean | undefined;
 
-	constructor(chrome: Chrome, panel: chrome.devtools.panels.ExtensionPanel) {
+	_port: PortLike | null;
+	_recordButton: ButtonLike | undefined;
+	_script: HTMLInputElement | undefined;
+	_toggleOnShow: boolean | undefined;
+
+	constructor(chrome: ChromeLike, panel: PanelLike) {
 		this.chrome = chrome;
 		this.panel = panel;
 
 		this.contentWindow = null;
+		this.recording = false;
 		this._port = null;
 
 		this._initializeUi();
@@ -142,7 +152,7 @@ export default class RecorderProxy {
 		const { document } = this.contentWindow!;
 
 		['insertCallback', 'insertMouseMove', 'toggleState'].forEach(id => {
-			var input = document.getElementById('hotkey-' + id);
+			const input = document.getElementById('hotkey-' + id);
 
 			/* istanbul ignore if: the recorder is broken if this ever happens */
 			if (!input) {
@@ -209,8 +219,9 @@ export default class RecorderProxy {
 	}
 
 	_initializeScript() {
-		const script = <HTMLInputElement>this
-			.contentWindow!.document.getElementById('script');
+		const script = <HTMLInputElement>this.contentWindow!.document.getElementById(
+			'script'
+		);
 
 		/* istanbul ignore if: the recorder is broken if this ever happens */
 		if (!script) {
@@ -219,15 +230,15 @@ export default class RecorderProxy {
 
 		this._script = script;
 
-		script.oninput = event => {
-			this.send('setScript', [(<HTMLInputElement>event.target).value]);
+		const _this = this;
+		script.oninput = function(this: any) {
+			_this.send('setScript', [this.value]);
 		};
 	}
 
 	_initializeUi() {
-		var self = this;
-		var panel = this.panel;
-		var controls: {
+		const panel = this.panel;
+		const controls: {
 			action: string;
 			button: [string, string, boolean];
 		}[] = [
@@ -263,8 +274,8 @@ export default class RecorderProxy {
 				control.button[1],
 				control.button[2]
 			);
-			button.onClicked.addListener(function() {
-				self.send(control.action);
+			button.onClicked.addListener(() => {
+				this.send(control.action);
 			});
 
 			if (control.action === 'toggleState') {
@@ -288,12 +299,12 @@ export default class RecorderProxy {
 		}
 	}
 
-	setHotkey(id: number, hotkey: HotKeyDef) {
+	setHotkey(id: number | string, hotkey: HotKeyDef) {
 		if (!this.contentWindow) {
 			return;
 		}
 
-		var input = <HTMLInputElement>this.contentWindow.document.getElementById(
+		const input = <HTMLInputElement>this.contentWindow.document.getElementById(
 			'hotkey-' + id
 		);
 
