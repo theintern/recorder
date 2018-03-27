@@ -47,7 +47,8 @@
 	"scripts": {
 		"build": "webpack",
 		"build-tests": "webpack --config=tests/webpack.config.js",
-		"test": "intern"
+		"test": "intern",
+		"ci": "npm run build-tests && npm test"
 	},
 	"dependencies": {
 		"prettier": "~1.11.1"
