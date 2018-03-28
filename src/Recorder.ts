@@ -500,6 +500,12 @@ export default class Recorder {
 				? commands[commands.length - 1].end
 				: test.start;
 
+		if (commands.length === 0 && method === 'get' && args) {
+			const url = args[0];
+			const page = url.replace(/\/$/, '').slice(url.lastIndexOf('/') + 1);
+			this.setSuiteName(page);
+		}
+
 		commands.push({
 			text: text,
 			method: method,
