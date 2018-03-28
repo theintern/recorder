@@ -523,6 +523,7 @@ export default class Recorder {
 
 		const commands = this._currentTest!.commands;
 		const lastCommand = commands[commands.length - 1];
+		const indent = this._lastTarget ? 1 : 0;
 
 		if (lastCommand && lastCommand.method === 'pressKeys') {
 			const shiftKey = getSeleniumKey('Shift', 0, true);
@@ -547,10 +548,14 @@ export default class Recorder {
 
 			args[0] += key;
 
-			lastCommand.text = createCommandText(lastCommand.method, args);
+			lastCommand.text = createCommandText(
+				lastCommand.method,
+				args,
+				indent
+			);
 			lastCommand.end = lastCommand.start + lastCommand.text.length;
 		} else {
-			this._record('pressKeys', [key]);
+			this._record('pressKeys', [key], indent);
 		}
 	}
 
