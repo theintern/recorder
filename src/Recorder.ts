@@ -26,6 +26,7 @@ export default class Recorder {
 	_lastTargetFrame: number[];
 	_lastTestId: 0;
 	_recordNextMouseMove: boolean;
+	_suiteName: string | undefined;
 
 	// connects to an EventProxy instance representing the web page that the devtools are open for
 	_contentPort: RecorderPort | null;
@@ -76,6 +77,7 @@ export default class Recorder {
 		this._ignoreKeyups = {};
 		this._script = '';
 		this._scriptTree = [];
+		this._suiteName = 'recorder-generated suite';
 
 		if (this.tabId) {
 			this.newTest();
@@ -619,7 +621,7 @@ export default class Recorder {
 
 	_renderScriptTree() {
 		const script = [
-			templates.suiteOpen,
+			templates.suiteOpen.replace('$NAME', this._suiteName!),
 			this._scriptTree
 				.map(test =>
 					[
@@ -668,6 +670,11 @@ export default class Recorder {
 	setScript(value: string) {
 		this._script = value;
 		this._port!.send('setScript', [value]);
+	}
+
+	setSuiteName(value: string) {
+		this._suiteName = value || 'recorder-generated suite';
+		this._renderScriptTree();
 	}
 
 	setStrategy(value: Strategy) {
@@ -914,9 +921,17 @@ function isModifierKey(key: string) {
 const templates = {
 	suiteOpen: [
 		"const { suite, test } = intern.getPlugin('interface.tdd');",
-		"const { assert } = intern.getPlugin('chai');",
+
+		// Include `assert` just to be clear about how to access it, but
+		// comment it out since generated tests won't use it by default.
+		"// const { assert } = intern.getPlugin('chai');",
+
 		'',
-		"suite('recorder-generated suite', () => {"
+
+		// Export the suite to ensure that it's built as a module rather than a
+		// simple script. Otherwise TS will complain about variables declared
+		// in the suite, like `suite` and `test`, since they'll be globals.
+		"export default suite('$NAME', () => {"
 	].join('\n'),
 	testOpen: ['', "  test('$NAME', tst => {", '    return tst.remote'].join(
 		'\n'

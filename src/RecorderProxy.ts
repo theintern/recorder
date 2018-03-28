@@ -170,12 +170,22 @@ export default class RecorderProxy {
 
 	_initializeOptions() {
 		const { document } = this.contentWindow!;
+		const suiteNameInput = document.getElementById('option-suite-name');
 		const strategyInput = document.getElementById('option-strategy');
+
+		/* istanbul ignore if: the recorder is broken if this ever happens */
+		if (!suiteNameInput) {
+			throw new Error('Panel is missing input for suite name');
+		}
 
 		/* istanbul ignore if: the recorder is broken if this ever happens */
 		if (!strategyInput) {
 			throw new Error('Panel is missing input for option "strategy"');
 		}
+
+		suiteNameInput.oninput = event => {
+			this.send('setSuiteName', [(<HTMLInputElement>event.target).value]);
+		};
 
 		strategyInput.onchange = event => {
 			this.send('setStrategy', [(<HTMLInputElement>event.target).value]);

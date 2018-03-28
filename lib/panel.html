@@ -73,6 +73,31 @@
 			<textarea class="fullHeight script" id="script" spellcheck="false" wrap="off" readonly
 				placeholder="The generated test script will show up here once you begin recording."></textarea>
 			<div class="configuration">
+				<div class="options">
+					<div class="options-title">Options</div>
+
+					<div class="option">
+						<label class="option-label" for="option-suite-name">Suite name</label>
+						<input class="option-input" id="option-suite-name"/>
+					</div>
+
+					<div class="option">
+						<label class="option-label" for="option-strategy">Element selection strategy</label>
+						<select class="option-input" id="option-strategy">
+							<option value="xpath">Use path of element</option>
+							<option value="text">Use text of element</option>
+						</select>
+					</div>
+
+					<div class="option">
+						<input type="checkbox" id="option-findDisplayed">
+						<label for="option-findDisplayed">
+							Wait for <a href="https://theintern.github.io/leadfoot/module-leadfoot_Command.html#isDisplayed" target="_blank">displayed</a> element
+							(use <a href="https://theintern.github.io/leadfoot/module-leadfoot_Command.html#findDisplayed" target="blank"><code>findDisplayed</code></a>)
+						</label>
+					</div>
+				</div>
+
 				<div class="hotkeys">
 					<div class="hotkeys-title">Hotkeys</div>
 
@@ -89,25 +114,6 @@
 					<div class="hotkey">
 						<label class="hotkey-label" for="hotkey-insertMouseMove">Insert move to current mouse position</label>
 						<input class="hotkey-input" id="hotkey-insertMouseMove">
-					</div>
-				</div>
-				<div class="options">
-					<div class="options-title">Options</div>
-
-					<div class="option">
-						<label class="option-label" for="option-strategy">Element selection strategy</label>
-						<select class="option-input" id="option-strategy">
-							<option value="xpath">Use path of element</option>
-							<option value="text">Use text of element</option>
-						</select>
-					</div>
-
-					<div class="option">
-						<input type="checkbox" id="option-findDisplayed">
-						<label for="option-findDisplayed">
-							Wait for <a href="https://theintern.github.io/leadfoot/module-leadfoot_Command.html#isDisplayed" target="_blank">displayed</a> element
-							(use <a href="https://theintern.github.io/leadfoot/module-leadfoot_Command.html#findDisplayed" target="blank"><code>findDisplayed</code></a>)
-						</label>
 					</div>
 				</div>
 			</div>
