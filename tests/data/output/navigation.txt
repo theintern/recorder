@@ -1,17 +1,17 @@
-define(function (require) {
-	var tdd = require('intern!tdd');
-	tdd.suite('recorder-generated suite', function () {
-		tdd.test('Test 1', function () {
-			return this.remote
-				.get('http://example.com')
-				.findByXpath('target')
-					.moveMouseTo(12, 23)
-					.clickMouseButton(0)
-					.end()
-				.refresh()
-				.get('http://example.com')
-				.get('http://example.com/#test')
-				.get('http://2.example');
-		});
-	});
+const { suite, test } = intern.getPlugin('interface.tdd');
+const { assert } = intern.getPlugin('chai');
+
+suite('recorder-generated suite', () => {
+  test('Test 1', tst => {
+    return tst.remote
+      .get('http://example.com')
+      .findByXpath('target')
+        .moveMouseTo(12, 23)
+        .clickMouseButton(0)
+        .end()
+      .refresh()
+      .get('http://example.com')
+      .get('http://example.com/#test')
+      .get('http://2.example');
+  });
 });

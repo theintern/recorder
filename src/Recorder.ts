@@ -83,9 +83,8 @@ export default class Recorder {
 	}
 
 	_eraseKeys(numKeys: number) {
-		const lastCommand = this._currentTest!.commands[
-			this._currentTest!.commands.length - 1
-		];
+		const commands = this._currentTest!.commands;
+		const lastCommand = commands[commands.length - 1];
 
 		if (numKeys === lastCommand.args[0].length) {
 			this._eraseLast(1);
@@ -98,6 +97,7 @@ export default class Recorder {
 			lastCommand.args
 		);
 		lastCommand.end = lastCommand.start + lastCommand.text.length;
+
 		this._renderScriptTree();
 	}
 
@@ -199,7 +199,7 @@ export default class Recorder {
 					delete this._currentModifiers[key[1]];
 					++numKeysToErase;
 				}
-			}, this);
+			});
 
 			if (numKeysToErase) {
 				this._eraseKeys(numKeysToErase);
@@ -493,9 +493,10 @@ export default class Recorder {
 		const commands = test.commands;
 
 		const text = createCommandText(method, args, indent);
-		const start = commands.length
-			? commands[commands.length - 1]!.end
-			: test.start;
+		const start =
+			commands.length > 0
+				? commands[commands.length - 1].end
+				: test.start;
 
 		commands.push({
 			text: text,
@@ -528,8 +529,9 @@ export default class Recorder {
 			const args = lastCommand.args;
 			const lastKey = args[0].charAt(args[0].length - 1);
 
-			// if the previous character was a Shift to start typing this uppercase letter, remove the Shift
-			// from the output since it is encoded in our use of an uppercase letter
+			// if the previous character was a Shift to start typing this
+			// uppercase letter, remove the Shift from the output since it is
+			// encoded in our use of an uppercase letter
 			if (suppressesShift(key) && lastKey === shiftKey) {
 				args[0] = args[0].slice(0, -1);
 			} else if (
@@ -537,8 +539,9 @@ export default class Recorder {
 				key === shiftKey &&
 				suppressesShift(lastKey)
 			) {
-				// if the previous character was an uppercase letter and this key is a Shift release, do not add
-				// the Shift release; it will be encoded in the next letter
+				// if the previous character was an uppercase letter and this
+				// key is a Shift release, do not add the Shift release; it
+				// will be encoded in the next letter
 				return;
 			}
 
@@ -566,8 +569,7 @@ export default class Recorder {
 			return false;
 		};
 
-		const evt =
-			event == null ? { target: null, targetFrame: <number[]>[] } : event;
+		const evt = event || { target: null, targetFrame: <number[]>[] };
 		const lastTargetFrame = this._lastTargetFrame;
 		const targetFrameChanged = checkTargetFrameChanged();
 		const targetChanged = evt.target !== this._lastTarget;
@@ -611,18 +613,21 @@ export default class Recorder {
 	}
 
 	_renderScriptTree() {
-		let script = TEMPLATES.suiteOpen;
+		const script = [
+			templates.suiteOpen,
+			this._scriptTree
+				.map(test =>
+					[
+						templates.testOpen.replace('$NAME', test.name),
+						...test.commands.map(command => command.text),
+						templates.testClose
+					].join('')
+				)
+				.join('\n'),
+			templates.suiteClose
+		];
 
-		this._scriptTree.forEach(function(test) {
-			script += TEMPLATES.testOpen.replace('$NAME', test.name);
-			test.commands.forEach(function(command) {
-				script += command.text;
-			});
-			script += TEMPLATES.testClose;
-		});
-
-		script += TEMPLATES.suiteClose;
-		this.setScript(script);
+		this.setScript(script.join(''));
 	}
 
 	save() {
@@ -719,7 +724,7 @@ export interface HotKeys {
 
 const FUNCTION_OBJECT = {
 	toString() {
-		return 'function () {}';
+		return '() => {}';
 	}
 };
 
@@ -728,7 +733,7 @@ function createCommandText(
 	args?: any[] | null,
 	indent?: number
 ) {
-	let text = `\n\t\t\t\t${extraIndent(indent)}.${method}(`;
+	let text = `\n${getIndent(3)}${getIndent(indent)}.${method}(`;
 
 	if (args && args.length) {
 		args.forEach(function(arg, index) {
@@ -748,10 +753,10 @@ function createCommandText(
 	return text;
 }
 
-function extraIndent(num = 0) {
+function getIndent(num = 0) {
 	let indent = '';
 	while (num-- > 0) {
-		indent += '\t';
+		indent += '  ';
 	}
 	return indent;
 }
@@ -890,7 +895,7 @@ function getSeleniumKey(
 	}
 }
 
-const MODIFIERS: { [key: string]: boolean } = {
+const modifiers: { [key: string]: boolean } = {
 	Shift: true,
 	Control: true,
 	Alt: true,
@@ -898,19 +903,19 @@ const MODIFIERS: { [key: string]: boolean } = {
 };
 
 function isModifierKey(key: string) {
-	return Boolean(MODIFIERS[key]);
+	return Boolean(modifiers[key]);
 }
 
-const TEMPLATES = {
+const templates = {
 	suiteOpen: [
-		'define(function (require) {',
-		"	var tdd = require('intern!tdd');",
-		"	tdd.suite('recorder-generated suite', function () {",
-		''
+		"const { suite, test } = intern.getPlugin('interface.tdd');",
+		"const { assert } = intern.getPlugin('chai');",
+		'',
+		"suite('recorder-generated suite', () => {"
 	].join('\n'),
-	suiteClose: ['	});', '});', ''].join('\n'),
-	testOpen: ["		tdd.test('$NAME', function () {", '			return this.remote'].join(
+	testOpen: ['', "  test('$NAME', tst => {", '    return tst.remote'].join(
 		'\n'
 	),
-	testClose: [';', '		});', ''].join('\n')
+	testClose: [';', '  });'].join('\n'),
+	suiteClose: ['', '});', ''].join('\n')
 };
