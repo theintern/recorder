@@ -1,10 +1,13 @@
 sudo: false
 language: node_js
 node_js:
-  - 'node'
+- node
 addons:
   chrome: stable
 cache:
   directories:
-    - node_modules
+  - node_modules
 script: npm run ci
+notifications:
+  slack:
+    secure: iIeBawvGzBDKfRHn/B6vu/W4CDJoWHxtJPgsZLm/N9nuEZj3OMC3MO5FwD56tXkf/ufh0/Ch+43DcpXVIoThILBP3/YPr2QyPyhGq6TOATU+i4Gp+em4MJonpeh370YIUUphYJOoMDenLQUs9L5mmyupphrVtcTpR7OX8uM8lMwgUKqKlKXQmXjDIgztyX0qeVJUEdKSTq29ZTFrzNJTZgTjXOXtNhDCtgk10rWu1EfWtqLDHG/79V+uTaV2Vi9X8W8JwQi5E1enf4fx6ABxVfGduDnnegqvDKbuedAx6ZbAzHHjOKYFuxqclODsVSjiJza9M0uDquEedRU81awvMw38Bz8QM70Mr9msKR64ZwGnMPJCpqasoIGpz45AmoSlx+iudMZAVvt5rVM77fYsaVdPIZa2pHi+IirSq2szcA3H2eoKzig8j//xd1AFYIde3LKZufMEZ0IFcBxb/VhX0pr/uFzlr9SbbN0B1tBfEcu6nZ+YmjNefInfytf8RL8LJUVCpDkJdMMb0uLUiJ+IAWezra+vvnDYH855aF+4Iut/24y/4aUrJBwzu9Ax7d4MGHxSipwVftyu7OZTiuWrnMxvbjVUdmy4Aeqnv7utrTqE9B7kpQu9Y/+2taVXboQ05SEgXn0NP6nZuAFvOFTSjbNYWy2lYHS5rcOIE+iyG9Y=
