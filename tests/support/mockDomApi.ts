@@ -45,12 +45,13 @@ class Listener {
 export interface ElementProperties {
 	nodeName: string;
 	tagName: string;
-	parentNode?: Element | Document;
+	parentNode?: Element | Document | null;
 	id?: string;
 	getBoundingClientRect: () => { top: number; left: number };
 	previousElementSibling?: Element;
 	stringValue?: string;
 	value?: string;
+	'data-test'?: string;
 }
 
 export interface MockEvent {}
@@ -59,11 +60,13 @@ export class Element implements ElementProperties {
 	nodeName: string;
 	tagName: string;
 	id?: string;
-	parentNode?: Element | Document;
+	parentNode?: Element | Document | null;
 	getBoundingClientRect: () => { top: number; left: number };
+	nextElementSibling?: Element;
 	previousElementSibling?: Element;
 	stringValue?: string;
 	value?: string;
+	'data-test': string;
 
 	checked?: boolean;
 	onkeydown?: (event: Partial<Event>) => void;
@@ -81,6 +84,14 @@ export class Element implements ElementProperties {
 			properties
 		);
 	}
+
+	hasAttribute(attr: string) {
+		return attr in this;
+	}
+
+	getAttribute(attr: string): string {
+		return String(this[<keyof Element>attr]);
+	}
 }
 
 export interface XpathResult {
@@ -93,21 +104,27 @@ export interface XpathResult {
 export class Document extends Listener {
 	elements: { [id: string]: Element } = {};
 	documentElement: Element;
+	html: Element;
 	body: Element;
+	parentNode = null;
 
 	constructor() {
 		super();
 		this.documentElement = new Element({
+			nodeName: '#document',
+			parentNode: null
+		});
+		this.html = new Element({
 			nodeName: 'HTML',
-			parentNode: this,
+			parentNode: this.documentElement,
 			tagName: 'HTML'
 		});
 		this.body = new Element({
 			nodeName: 'BODY',
-			parentNode: this.documentElement,
+			parentNode: this.html,
 			previousElementSibling: new Element({
 				nodeName: 'HEAD',
-				parentNode: this.documentElement,
+				parentNode: this.html,
 				tagName: 'HEAD'
 			}),
 			tagName: 'BODY'
@@ -115,7 +132,7 @@ export class Document extends Listener {
 	}
 
 	elementsFromPoint() {
-		return [this.body, this.documentElement];
+		return [this.body, this.html, this.documentElement];
 	}
 
 	evaluate = createMockMethod<XpathResult>(

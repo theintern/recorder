@@ -191,31 +191,31 @@ registerSuite('EventProxy', () => {
 			'#getElementTextPath': function() {
 				const element1 = new Element({
 					nodeName: 'BODY',
-					parentNode: document.documentElement,
+					parentNode: document.html,
 					previousElementSibling: new Element({
 						nodeName: 'HEAD',
-						parentNode: document.documentElement
+						parentNode: document.html
 					}),
 					stringValue: 'Hello, world'
 				});
 
 				assert.strictEqual(
-					eventProxy.getElementTextPath(<any>element1),
+					eventProxy.getElementTextPath(element1),
 					'/HTML/BODY[1][normalize-space(string())="Hello, world"]'
 				);
 
 				const element2 = new Element({
 					nodeName: 'SINGLE',
-					parentNode: document.documentElement,
+					parentNode: document.html,
 					previousElementSibling: new Element({
 						nodeName: 'HEAD',
-						parentNode: document.documentElement
+						parentNode: document.html
 					}),
 					stringValue: 'Hello, world'
 				});
 
 				assert.strictEqual(
-					eventProxy.getElementTextPath(<any>element2),
+					eventProxy.getElementTextPath(element2),
 					'//SINGLE[normalize-space(string())="Hello, world"]'
 				);
 			},
@@ -223,10 +223,10 @@ registerSuite('EventProxy', () => {
 			'#getElementXPath': function() {
 				const body = new Element({
 					nodeName: 'BODY',
-					parentNode: document.documentElement,
+					parentNode: document.html,
 					previousElementSibling: new Element({
 						nodeName: 'HEAD',
-						parentNode: document.documentElement
+						parentNode: document.html
 					})
 				});
 
@@ -240,7 +240,7 @@ registerSuite('EventProxy', () => {
 				});
 
 				assert.strictEqual(
-					eventProxy.getElementXPath(<any>element1),
+					eventProxy.getElementXPath(element1),
 					'/HTML/BODY[1]/DIV[2]'
 				);
 
@@ -249,14 +249,29 @@ registerSuite('EventProxy', () => {
 					nodeName: 'DIV',
 					parentNode: body
 				});
-
 				assert.strictEqual(
-					eventProxy.getElementXPath(<any>element2),
+					eventProxy.getElementXPath(element2),
 					'id("test")'
 				);
 				assert.strictEqual(
-					eventProxy.getElementXPath(<any>element2, true),
+					eventProxy.getElementXPath(element2, true),
 					'/HTML/BODY[1]/DIV'
+				);
+
+				const element3 = new Element({
+					id: 'test',
+					'data-test': 'bar',
+					nodeName: 'DIV',
+					parentNode: body
+				});
+				eventProxy.setCustomAttribute('data-test');
+				assert.strictEqual(
+					eventProxy.getElementXPath(element3),
+					'[data-test="bar"]'
+				);
+				assert.strictEqual(
+					eventProxy.getElementXPath(element3, true),
+					'[data-test="bar"]'
 				);
 			},
 
@@ -320,6 +335,14 @@ registerSuite('EventProxy', () => {
 				assert.strictEqual(
 					eventProxy.getTarget,
 					eventProxy.getElementTextPath
+				);
+			},
+
+			'#setCustomAttribute': function() {
+				eventProxy.setCustomAttribute('foo');
+				assert.strictEqual(
+					eventProxy.getTarget,
+					eventProxy.getElementXPath
 				);
 			}
 		}

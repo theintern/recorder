@@ -356,6 +356,15 @@ registerSuite('RecorderProxy', () => {
 					window.document.getElementById('option-strategy')!.value,
 					'xpath'
 				);
+			},
+
+			'#setCustomAttribute': function() {
+				recorderProxy.setCustomAttribute('foo');
+				assert.strictEqual(
+					window.document.getElementById('option-custom-attribute')!
+						.value,
+					'foo'
+				);
 			}
 		}
 	};

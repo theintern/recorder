@@ -172,6 +172,9 @@ export default class RecorderProxy {
 		const { document } = this.contentWindow!;
 		const suiteNameInput = document.getElementById('option-suite-name');
 		const strategyInput = document.getElementById('option-strategy');
+		const customAttrInput = document.getElementById(
+			'option-custom-attribute'
+		);
 
 		/* istanbul ignore if: the recorder is broken if this ever happens */
 		if (!suiteNameInput) {
@@ -183,12 +186,25 @@ export default class RecorderProxy {
 			throw new Error('Panel is missing input for option "strategy"');
 		}
 
+		/* istanbul ignore if: the recorder is broken if this ever happens */
+		if (!customAttrInput) {
+			throw new Error(
+				'Panel is missing input for custom attribute option'
+			);
+		}
+
 		suiteNameInput.oninput = event => {
 			this.send('setSuiteName', [(<HTMLInputElement>event.target).value]);
 		};
 
 		strategyInput.onchange = event => {
 			this.send('setStrategy', [(<HTMLInputElement>event.target).value]);
+		};
+
+		customAttrInput.oninput = event => {
+			this.send('setCustomAttribute', [
+				(<HTMLInputElement>event.target).value
+			]);
 		};
 
 		const findInput = document.getElementById('option-findDisplayed');
@@ -342,6 +358,14 @@ export default class RecorderProxy {
 		if (this.contentWindow) {
 			(<HTMLInputElement>this.contentWindow!.document.getElementById(
 				'option-strategy'
+			)).value = value;
+		}
+	}
+
+	setCustomAttribute(value: string) {
+		if (this.contentWindow) {
+			(<HTMLInputElement>this.contentWindow!.document.getElementById(
+				'option-custom-attribute'
 			)).value = value;
 		}
 	}

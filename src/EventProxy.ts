@@ -17,8 +17,9 @@ export default class EventProxy {
 	lastMouseDown: {
 		[button: number]: { event: MouseEvent; elements: Element[] };
 	};
-	getTarget: (element: Element) => string;
+	getTarget: (element: ElementLike) => string;
 	port: chrome.runtime.Port | null;
+	_customAttr: string | undefined;
 
 	constructor(window: Window, document: Document, chrome: Chrome) {
 		this.window = window;
@@ -69,12 +70,12 @@ export default class EventProxy {
 		});
 	}
 
-	getElementTextPath(element: Element) {
+	getElementTextPath(element: ElementLike) {
 		const tagPrefix = `//${element.nodeName}`;
 
 		const textValue = this.document.evaluate(
 			'normalize-space(string())',
-			element,
+			<any>element,
 			null,
 			(<any>this.window).XPathResult.STRING_TYPE,
 			null
@@ -107,26 +108,36 @@ export default class EventProxy {
 		return path;
 	}
 
-	getElementXPath(element: Element, ignoreId?: boolean) {
+	getElementXPath(element?: ElementLike, ignoreId?: boolean) {
 		const path = [];
-		let node: Node | null = element;
+		let node: ElementLike | DocumentLike | null | undefined = element;
 
 		do {
-			element = <Element>node;
+			const el = <ElementLike>node;
 
-			if (element.id && !ignoreId) {
-				path.unshift('id("' + element.id + '")');
+			if (
+				this._customAttr &&
+				el.hasAttribute &&
+				el.hasAttribute(this._customAttr)
+			) {
+				const value = el.getAttribute(this._customAttr);
+				path.unshift(`[${this._customAttr}="${value}"]`);
 
 				// No need to continue to ascend since we found a unique root
 				break;
-			} else if (element.parentNode) {
-				const nodeName = element.nodeName;
+			} else if (el.id && !ignoreId) {
+				path.unshift('id("' + el.id + '")');
+
+				// No need to continue to ascend since we found a unique root
+				break;
+			} else if (el.parentNode) {
+				const nodeName = el.nodeName;
 				const hasNamedSiblings = Boolean(
-					element.previousElementSibling || element.nextElementSibling
+					el.previousElementSibling || el.nextElementSibling
 				);
 				// XPath is 1-indexed
 				let index = 1;
-				let sibling: Element | null = element;
+				let sibling: ElementLike | null | undefined = el;
 
 				if (hasNamedSiblings) {
 					while ((sibling = sibling.previousElementSibling)) {
@@ -140,10 +151,11 @@ export default class EventProxy {
 					path.unshift(nodeName);
 				}
 			} else {
-				// The root node
+				// The root node -- add an empty string so the join will add a
+				// '/' to the beginning of the path
 				path.unshift('');
 			}
-		} while ((node = element.parentNode));
+		} while ((node = node!.parentNode));
 
 		return path.join('/');
 	}
@@ -259,7 +271,7 @@ export default class EventProxy {
 			location: event.location,
 			metaKey: event.metaKey,
 			shiftKey: event.shiftKey,
-			target: this.getTarget(target),
+			target: this.getTarget(<ElementLike>target),
 			targetFrame: [],
 			type: event.type
 		});
@@ -277,4 +289,22 @@ export default class EventProxy {
 				throw new Error('Invalid strategy "' + value + '"');
 		}
 	}
+
+	setCustomAttribute(value: string) {
+		this._customAttr = value;
+	}
+}
+
+export interface ElementLike {
+	hasAttribute(attr: string): boolean;
+	nodeName: string;
+	getAttribute(attr: string): string | null;
+	id?: string;
+	parentNode?: ElementLike | DocumentLike | null;
+	previousElementSibling?: ElementLike | null;
+	nextElementSibling?: ElementLike | null;
+}
+
+export interface DocumentLike {
+	parentNode: null;
 }

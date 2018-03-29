@@ -234,6 +234,9 @@ registerSuite('Recorder', () => {
 					expected.push([
 						{ method: 'setFindDisplayed', args: [false] }
 					]);
+					expected.push([
+						{ method: 'setCustomAttribute', args: [null] }
+					]);
 					assert.sameDeepMembers(
 						actual,
 						expected,
@@ -1129,6 +1132,18 @@ registerSuite('Recorder', () => {
 				}
 			},
 
+			'#setCustomAttribute'() {
+				devToolsPort.postMessage.clear();
+				const eventProxyPort = chrome.createPort('eventProxy');
+				chrome.runtime.onConnect.emit(eventProxyPort);
+				eventProxyPort.postMessage.clear();
+				recorder.setCustomAttribute('foo');
+				assert.lengthOf(devToolsPort.postMessage.calls, 0);
+				assert.deepEqual(eventProxyPort.postMessage.calls, [
+					[{ method: 'setCustomAttribute', args: ['foo'] }]
+				]);
+			},
+
 			'#setFindDisplayed'() {
 				devToolsPort.postMessage.clear();
 				const eventProxyPort = chrome.createPort('eventProxy');
@@ -1251,10 +1266,7 @@ registerSuite('Recorder', () => {
 					assert.isTrue(recorder.recording);
 					assert.deepEqual(
 						chrome.tabs.executeScript.calls,
-						[
-							[1, { file: 'lib/EventProxy.js', allFrames: true }],
-							[1, { file: 'lib/content.js', allFrames: true }]
-						],
+						[[1, { file: 'lib/content.js', allFrames: true }]],
 						'Content scripts should be injected when turning ' +
 							'on recording'
 					);

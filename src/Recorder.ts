@@ -13,7 +13,8 @@ export default class Recorder {
 	storage: Storage;
 	hotkeys: HotKeys;
 	strategy: Strategy;
-	findDisplayed: string | false;
+	findDisplayed: boolean | false;
+	customAttribute: string | undefined | null;
 	recording: boolean;
 	tabId: number | undefined | null;
 
@@ -55,7 +56,9 @@ export default class Recorder {
 			: this._getDefaultHotkeys();
 
 		this.strategy = <Strategy>storage.getItem('intern.strategy') || 'xpath';
-		this.findDisplayed = storage.getItem('intern.findDisplayed') || false;
+		this.findDisplayed =
+			parseBoolean(storage.getItem('intern.findDisplayed')) || false;
+		this.customAttribute = storage.getItem('intern.customAttribute');
 
 		this.recording = false;
 		this.tabId = null;
@@ -264,6 +267,11 @@ export default class Recorder {
 				};
 
 				this._contentPort.send('setStrategy', [this.strategy]);
+				if (this.customAttribute) {
+					this._contentPort.send('setCustomAttribute', [
+						this.customAttribute
+					]);
+				}
 			}
 		});
 
@@ -324,10 +332,6 @@ export default class Recorder {
 	}
 
 	_injectContentScript() {
-		this.chrome.tabs.executeScript(this.tabId!, {
-			file: 'lib/EventProxy.js',
-			allFrames: true
-		});
 		this.chrome.tabs.executeScript(this.tabId!, {
 			file: 'lib/content.js',
 			allFrames: true
@@ -617,6 +621,7 @@ export default class Recorder {
 		port.send('setScript', [this._script]);
 		port.send('setRecording', [this.recording]);
 		port.send('setStrategy', [this.strategy]);
+		port.send('setCustomAttribute', [this.customAttribute]);
 
 		for (const hotkeyId in this.hotkeys) {
 			port.send('setHotkey', [
@@ -663,6 +668,7 @@ export default class Recorder {
 	}
 
 	setFindDisplayed(value: boolean) {
+		this.findDisplayed = value;
 		const valueStr = value ? 'true' : 'false';
 		this.storage.setItem('intern.findDisplayed', valueStr);
 		this._findCommand = value ? 'findDisplayedByXpath' : 'findByXpath';
@@ -682,6 +688,12 @@ export default class Recorder {
 	setSuiteName(value: string) {
 		this._suiteName = value || 'recorder-generated suite';
 		this._renderScriptTree();
+	}
+
+	setCustomAttribute(value: string) {
+		this.customAttribute = value;
+		this.storage.setItem('intern.customAttribute', value);
+		this._contentPort!.send('setCustomAttribute', [value]);
 	}
 
 	setStrategy(value: Strategy) {
@@ -914,6 +926,10 @@ function getSeleniumKey(
 	} else {
 		return key;
 	}
+}
+
+function parseBoolean(value: string | null) {
+	return value === 'true';
 }
 
 const modifiers: { [key: string]: boolean } = {
