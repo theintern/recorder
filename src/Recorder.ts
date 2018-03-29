@@ -930,16 +930,15 @@ function isModifierKey(key: string) {
 const templates = {
 	suiteOpen: [
 		"const { suite, test } = intern.getPlugin('interface.tdd');",
+		'',
 
-		// Include `assert` just to be clear about how to access it, but
-		// comment it out since generated tests won't use it by default.
+		"// Uncomment the line below to use chai's 'assert' interface.",
 		"// const { assert } = intern.getPlugin('chai');",
 
 		'',
 
-		// Export the suite to ensure that it's built as a module rather than a
-		// simple script. Otherwise TS will complain about variables declared
-		// in the suite, like `suite` and `test`, since they'll be globals.
+		"// Export the suite to ensure that it's built as a module rather",
+		'// than a simple script.',
 		"export default suite('$NAME', () => {"
 	].join('\n'),
 	testOpen: ['', "  test('$NAME', tst => {", '    return tst.remote'].join(
