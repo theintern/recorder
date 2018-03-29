@@ -1,13 +1,14 @@
 {
 	"manifest_version": 2,
 	"name": "Intern Recorder",
-	"description": "Creates functional tests for Intern based on interaction with a site from your browser.",
+	"description":
+		"Creates functional tests for Intern based on interaction with a site from your browser.",
 	"version": "2.0.0",
-	"version_name": "2.0.0-pre",
+	"version_name": "2.0.0",
 	"minimum_chrome_version": "26.0",
 	"devtools_page": "lib/devtools.html",
 	"background": {
-		"scripts": [ "lib/Recorder.js", "lib/background.js" ],
+		"scripts": ["lib/Recorder.js", "lib/background.js"],
 		"persistent": false
 	},
 	"icons": {
