@@ -7,6 +7,7 @@ import {
 	PortLike,
 	ButtonLike
 } from './types';
+import * as hljs from 'highlight.js';
 
 export default class RecorderProxy {
 	chrome: ChromeLike;
@@ -16,7 +17,7 @@ export default class RecorderProxy {
 
 	_port: PortLike | null;
 	_recordButton: ButtonLike | undefined;
-	_script: HTMLInputElement | undefined;
+	_script: HTMLPreElement | undefined;
 	_toggleOnShow: boolean | undefined;
 
 	constructor(chrome: ChromeLike, panel: PanelLike) {
@@ -245,7 +246,7 @@ export default class RecorderProxy {
 	}
 
 	_initializeScript() {
-		const script = <HTMLInputElement>this.contentWindow!.document.getElementById(
+		const script = <HTMLPreElement>this.contentWindow!.document.getElementById(
 			'script'
 		);
 
@@ -255,11 +256,6 @@ export default class RecorderProxy {
 		}
 
 		this._script = script;
-
-		const _this = this;
-		script.oninput = function(this: any) {
-			_this.send('setScript', [this.value]);
-		};
 	}
 
 	_initializeUi() {
@@ -350,7 +346,11 @@ export default class RecorderProxy {
 
 	setScript(value: string) {
 		if (this._script && value != null) {
-			this._script.value = value;
+			this._script.innerHTML = hljs.highlight(
+				'typescript',
+				value,
+				true
+			).value;
 		}
 	}
 

@@ -92,9 +92,6 @@ registerSuite('RecorderProxy', () => {
 					assert.isFunction(input.onkeydown);
 				});
 
-				const script = window.document.getElementById('script')!;
-				assert.isFunction(script.oninput);
-
 				const strategy = window.document.getElementById(
 					'option-strategy'
 				)!;
@@ -169,13 +166,9 @@ registerSuite('RecorderProxy', () => {
 			},
 
 			'script set': function() {
-				const { method: send } = mock(recorderProxy, 'send');
-
 				recorderProxy.setScript('test');
-
-				const event = createEvent({ key: 'U+0020' });
-				window.document.getElementById('script')!.oninput!(event);
-				assert.deepEqual(send.calls, [['setScript', ['test']]]);
+				const script = window.document.getElementById('script');
+				assert.deepEqual(script!.innerHTML, 'test');
 			},
 
 			'strategy set': function() {
@@ -345,7 +338,7 @@ registerSuite('RecorderProxy', () => {
 				// Setting script to null should have no effect
 				recorderProxy.setScript(<any>null);
 				assert.strictEqual(
-					window.document.getElementById('script')!.value,
+					window.document.getElementById('script')!.innerHTML,
 					'test'
 				);
 			},

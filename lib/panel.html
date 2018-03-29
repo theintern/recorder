@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<meta charset="utf-8">
+	<link rel="stylesheet" href="highlight.css" />
 	<style>
 		html,
 		body {
@@ -15,6 +16,7 @@
 		.hbox {
 			display: flex;
 			flex-flow: row;
+			align-items: stretch;
 		}
 
 		.hwrap {
@@ -64,17 +66,19 @@
 			margin: 0 5px;
 			padding: 0.3rem;
 			resize: none;
+			font-size: 12px;
+			overflow: auto;
 		}
 
-		.script::-webkit-input-placeholder {
-			color: #333;
-			font-family: sans-serif;
+		.placeholder {
+			color: var(--light-text);
 		}
 
 		.configuration {
 			flex: 1;
 			margin: 0 5px;
 			min-width: 145px;
+			overflow: auto;
 		}
 
 		.section-title {
@@ -91,8 +95,7 @@
 	</style>
 	<body>
 		<div class="hbox fullHeight panel">
-			<textarea class="fullHeight script" id="script" spellcheck="false" wrap="off" readonly
-				placeholder="The generated test script will show up here once you begin recording."></textarea>
+			<pre class="fullHeight script" id="script"><span class="placeholder">The generated test script will show up here once you begin recording.</span></pre>
 			<div class="configuration vbox">
 				<div class="section vbox">
 					<div class="section-title">Options</div>

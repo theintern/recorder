@@ -35,7 +35,11 @@ module.exports = {
 				{ from: 'lib', to: 'lib' },
 				{ from: 'manifest.json' },
 				{ from: 'LICENSE' },
-				{ from: 'docs', to: 'docs' }
+				{ from: 'docs', to: 'docs' },
+				{
+					from: require.resolve('highlight.js/styles/tomorrow.css'),
+					to: 'lib/highlight.css'
+				}
 			],
 			{ ignore: ['.DS_Store'] }
 		)

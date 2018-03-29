@@ -52,6 +52,7 @@ export interface ElementProperties {
 	stringValue?: string;
 	value?: string;
 	'data-test'?: string;
+	innerHTML?: string;
 }
 
 export interface MockEvent {}
@@ -67,6 +68,7 @@ export class Element implements ElementProperties {
 	stringValue?: string;
 	value?: string;
 	'data-test': string;
+	innerHTML?: string;
 
 	checked?: boolean;
 	onkeydown?: (event: Partial<Event>) => void;
