@@ -1,0 +1,6 @@
+{
+	"extends": "@theintern/dev/tslint.json",
+	"rules": {
+		"indent": [true, "spaces", 2]
+	}
+}

@@ -1,10 +1,10 @@
 const { suite, test } = intern.getPlugin('interface.tdd');
-const { assert } = intern.getPlugin('chai');
+// const { assert } = intern.getPlugin('chai');
 
-suite('recorder-generated suite', () => {
+export default suite('hotkey', () => {
   test('Test 1', tst => {
     return tst.remote
-      .get('http://example.com')
+      .get('http://localhost:9000/tests/data/frame.html')
       .pressKeys('');
   });
 });

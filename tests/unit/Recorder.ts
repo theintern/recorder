@@ -1,5 +1,5 @@
 import { mock } from '../support/util';
-import MockChrome, { Port } from '../support/mockChromeApi';
+import MockChrome, { testPage, testHost, Port } from '../support/mockChromeApi';
 import MockStorage from '../support/mockStorageApi';
 import Recorder, {
 	HotKeys,
@@ -7,35 +7,35 @@ import Recorder, {
 	RecorderMouseEvent,
 	RecorderKeyboardEvent
 } from '../../src/Recorder';
-import * as BlankText from '../data/output/blank.txt';
-import * as CallbackText from '../data/output/callback.txt';
-import * as ClickText from '../data/output/click.txt';
-import * as DoubleClickText from '../data/output/doubleClick.txt';
-import * as DragText from '../data/output/drag.txt';
-import * as FindDisplayedText from '../data/output/findDisplayed.txt';
-import * as FrameText from '../data/output/frame.txt';
-import * as HotkeyText from '../data/output/hotkey.txt';
-import * as MouseMoveText from '../data/output/mouseMove.txt';
-import * as NavigationText from '../data/output/navigation.txt';
-import * as NewTestText from '../data/output/newTest.txt';
-import * as TypeText from '../data/output/type.txt';
+import * as BlankText from '../integration/blank.ts';
+import * as CallbackText from '../integration/callback.ts';
+import * as ClickText from '../integration/click.ts';
+import * as DoubleClickText from '../integration/doubleClick.ts';
+import * as DragText from '../integration/drag.ts';
+import * as FindDisplayedText from '../integration/findDisplayed.ts';
+import * as FrameText from '../integration/frame.ts';
+import * as HotkeyText from '../integration/hotkey.ts';
+import * as MouseMoveText from '../integration/mouseMove.ts';
+import * as NavigationText from '../integration/navigation.ts';
+import * as NewTestText from '../integration/newTest.ts';
+import * as TypeText from '../integration/type.ts';
 
 const { assert } = intern.getPlugin('chai');
 const { registerSuite } = intern.getPlugin('interface.object');
 
-const testData = {
-	blank: BlankText,
-	callback: CallbackText,
-	click: ClickText,
-	doubleClick: DoubleClickText,
-	drag: DragText,
-	findDisplayed: FindDisplayedText,
-	frame: FrameText,
-	hotkey: HotkeyText,
-	mouseMove: MouseMoveText,
-	navigation: NavigationText,
-	newTest: NewTestText,
-	type: TypeText
+const testData: { [key: string]: string } = {
+	blank: <any>BlankText,
+	callback: <any>CallbackText,
+	click: <any>ClickText,
+	doubleClick: <any>DoubleClickText,
+	drag: <any>DragText,
+	findDisplayed: <any>FindDisplayedText,
+	frame: <any>FrameText,
+	hotkey: <any>HotkeyText,
+	mouseMove: <any>MouseMoveText,
+	navigation: <any>NavigationText,
+	newTest: <any>NewTestText,
+	type: <any>TypeText
 };
 
 function assertScriptValue(port: Port, value: string, assertMessage?: string) {
@@ -69,11 +69,11 @@ function createEvent(event: Partial<RecorderEvent>): RecorderEvent {
 			altKey: false,
 			button: 0,
 			buttons: 0,
-			clientX: 12,
-			clientY: 23,
+			clientX: 59,
+			clientY: 12,
 			ctrlKey: false,
-			elementX: 12,
-			elementY: 23,
+			elementX: 59,
+			elementY: 12,
 			location: 0,
 			metaKey: false,
 			shiftKey: false,
@@ -313,6 +313,7 @@ registerSuite('Recorder', () => {
 
 			'#insertCallback'() {
 				recorder.setTabId(1);
+
 				const expected = getLastScriptValue(devToolsPort);
 				recorder.insertCallback();
 				assert.strictEqual(
@@ -322,11 +323,14 @@ registerSuite('Recorder', () => {
 				);
 				recorder.toggleState();
 				recorder.insertCallback();
+
+				recorder.setSuiteName('callback');
 				assertScriptValue(devToolsPort, testData.callback);
 			},
 
 			'#insertMouseMove'() {
-				recorder.setTabId(1);
+				recorder.setTabId(2);
+
 				const expected1 = getLastScriptValue(devToolsPort);
 				recorder.insertMouseMove();
 				assert.strictEqual(
@@ -342,27 +346,50 @@ registerSuite('Recorder', () => {
 					expected2,
 					'insertMouseMove should be a no-op if there was no previous mouse move'
 				);
-				recorder.recordEvent(createEvent({ type: 'mousemove' }));
+				recorder.recordEvent(
+					createEvent({ type: 'mousemove', target: 'id("b2")' })
+				);
 				recorder.insertMouseMove();
+
+				recorder.setSuiteName('mouseMove');
 				assertScriptValue(devToolsPort, testData.mouseMove);
 			},
 
 			navigation() {
-				recorder.setTabId(1);
+				recorder.setTabId(2);
 				recorder.toggleState();
+
 				// to test target reset on navigation
 				recorder.recordEvent(
-					createEvent({ type: 'mousedown', buttons: 1 })
+					createEvent({
+						type: 'mousedown',
+						buttons: 1,
+						target: 'id("b2")'
+					})
 				);
 				recorder.recordEvent(createEvent({ type: 'mouseup' }));
-				recorder.recordEvent(createEvent({ type: 'click' }));
+				recorder.recordEvent(
+					createEvent({
+						type: 'click',
+						target: 'id("b2")',
+						elementX: 5,
+						elementY: 11
+					})
+				);
 				// should be ignored due to tab mismatch
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 1,
+					frameId: 0,
+					transitionType: 'reload',
+					transitionQualifiers: ['from_address_bar'],
+					url: testPage
+				});
 				chrome.webNavigation.onCommitted.emit({
 					tabId: 2,
 					frameId: 0,
 					transitionType: 'reload',
 					transitionQualifiers: ['from_address_bar'],
-					url: 'http://example.com'
+					url: testPage
 				});
 				// should be ignored due to frameId mismatch
 				chrome.webNavigation.onCommitted.emit({
@@ -370,14 +397,7 @@ registerSuite('Recorder', () => {
 					frameId: 1,
 					transitionType: 'reload',
 					transitionQualifiers: ['from_address_bar'],
-					url: 'http://example.com'
-				});
-				chrome.webNavigation.onCommitted.emit({
-					tabId: 1,
-					frameId: 0,
-					transitionType: 'reload',
-					transitionQualifiers: ['from_address_bar'],
-					url: 'http://example.com'
+					url: testPage
 				});
 				// should be ignored due to transitionType/transitionQualifiers mismatch
 				chrome.webNavigation.onReferenceFragmentUpdated.emit({
@@ -385,47 +405,72 @@ registerSuite('Recorder', () => {
 					frameId: 0,
 					transitionType: 'link',
 					transitionQualifiers: [],
-					url: 'http://example.com/#test'
+					url: `${testPage}#test`
+				});
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 2,
+					frameId: 0,
+					transitionType: 'link',
+					transitionQualifiers: ['from_address_bar'],
+					url: `${testPage}`
+				});
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 2,
+					frameId: 0,
+					transitionType: 'link',
+					transitionQualifiers: ['from_address_bar'],
+					url: `${testPage}#test`
+				});
+				chrome.webNavigation.onCommitted.emit({
+					tabId: 2,
+					frameId: 0,
+					transitionType: 'link',
+					transitionQualifiers: ['from_address_bar'],
+					url: `${testHost}/elements.html`
 				});
 				chrome.webNavigation.onCommitted.emit({
 					tabId: 1,
 					frameId: 0,
 					transitionType: 'typed',
 					transitionQualifiers: ['forward_back', 'from_address_bar'],
-					url: 'http://example.com'
+					url: testPage
 				});
 				chrome.webNavigation.onReferenceFragmentUpdated.emit({
 					tabId: 1,
 					frameId: 0,
 					transitionType: 'link',
 					transitionQualifiers: ['forward_back'],
-					url: 'http://example.com/#test'
+					url: `${testPage}#test`
 				});
 				chrome.webNavigation.onHistoryStateUpdated.emit({
 					tabId: 1,
 					frameId: 0,
 					transitionType: 'auto_subframe',
 					transitionQualifiers: [],
-					url: 'http://example.com'
+					url: testPage
 				});
 				chrome.webNavigation.onCommitted.emit({
 					tabId: 1,
 					frameId: 0,
 					transitionType: 'typed',
 					transitionQualifiers: ['from_address_bar'],
-					url: 'http://2.example'
+					url: 'http://localhost:9000/elements.html'
 				});
+
+				recorder.setSuiteName('navigation');
 				assertScriptValue(devToolsPort, testData.navigation);
 			},
 
 			'#newTest': {
-				'missing tabId': function() {
+				'missing tabId'() {
 					assert.throws(function() {
 						recorder.newTest();
 					}, 'missing tabId');
 				},
-				'multiple tests': function() {
+
+				'multiple tests'() {
 					recorder.setTabId(1);
+
 					recorder.toggleState();
 					recorder.insertCallback();
 					recorder.newTest();
@@ -436,326 +481,370 @@ registerSuite('Recorder', () => {
 						createEvent({
 							type: 'mousedown',
 							targetFrame: [0],
-							buttons: 1
+							buttons: 1,
+							target: 'id("b2")'
 						})
 					);
 					recorder.recordEvent(
 						createEvent({ type: 'mouseup', targetFrame: [0] })
 					);
 					recorder.recordEvent(
-						createEvent({ type: 'click', targetFrame: [0] })
+						createEvent({
+							type: 'click',
+							targetFrame: [0],
+							elementX: 12,
+							elementY: 23
+						})
 					);
 					recorder.newTest();
 					recorder.insertCallback();
+
+					recorder.setSuiteName('newTest');
 					assertScriptValue(devToolsPort, testData.newTest);
 				}
 			},
 
 			'#recordEvent': {
-				beforeEach: function() {
+				'not recording'() {
+					recorder.setTabId(1);
+					assert.isFalse(recorder.recording);
+					recorder.recordEvent(createEvent({ type: 'mousemove' }));
+					assertScriptValue(devToolsPort, testData.blank);
+				},
+
+				click() {
+					recorder.setTabId(2);
+					recorder.toggleState();
+
+					recorder.recordEvent(createEvent({ type: 'mousemove' }));
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousedown',
+							buttons: 1,
+							target: 'id("b2")'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mouseup',
+							target: '/HTML/BODY[1]'
+						})
+					);
+					recorder.recordEvent(createEvent({ type: 'click' }));
+					recorder.setSuiteName('click');
+					assertScriptValue(devToolsPort, testData.click);
+				},
+
+				'double click'() {
+					recorder.setTabId(2);
+					recorder.toggleState();
+
+					recorder.recordEvent(createEvent({ type: 'mousemove' }));
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousedown',
+							buttons: 1,
+							target: 'id("b2")'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mouseup',
+							target: '/HTML/BODY[1]'
+						})
+					);
+					recorder.recordEvent(createEvent({ type: 'click' }));
+					recorder.recordEvent(
+						createEvent({ type: 'mousedown', buttons: 1 })
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mouseup',
+							target: '/HTML/BODY[1]'
+						})
+					);
+					recorder.recordEvent(createEvent({ type: 'click' }));
+					recorder.recordEvent(createEvent({ type: 'dblclick' }));
+					recorder.setSuiteName('doubleClick');
+					assertScriptValue(devToolsPort, testData.doubleClick);
+				},
+
+				drag() {
+					recorder.setTabId(2);
+					recorder.toggleState();
+
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousedown',
+							elementX: 9,
+							elementY: 9,
+							buttons: 1,
+							target: 'id("b2")'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousemove',
+							elementX: 10,
+							elementY: 9,
+							buttons: 1,
+							target: 'id("b2")'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mouseup',
+							target: '/HTML/BODY[1]',
+							elementX: 32,
+							elementY: 43
+						})
+					);
+					recorder.setSuiteName('drag');
+					assertScriptValue(devToolsPort, testData.drag);
+				},
+
+				frame() {
+					recorder.setTabId(3);
+					recorder.toggleState();
+
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousemove',
+							targetFrame: [1, 0]
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousedown',
+							targetFrame: [1, 0],
+							buttons: 1,
+							target: 'id("b2")'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mouseup',
+							targetFrame: [1, 0],
+							target: '/HTML/BODY[1]'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'click',
+							targetFrame: [1, 0],
+							elementX: 8,
+							elementY: 11
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousemove',
+							targetFrame: [1, 1]
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mousedown',
+							targetFrame: [1, 1],
+							buttons: 1,
+							target: '/HTML/BODY[1]/P'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'mouseup',
+							targetFrame: [1, 1],
+							target: '/HTML/BODY[1]/P'
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'click',
+							targetFrame: [1, 1],
+							elementX: 22,
+							elementY: 27
+						})
+					);
+					recorder.setSuiteName('frame');
+					assertScriptValue(devToolsPort, testData.frame);
+				},
+
+				type() {
 					recorder.setTabId(1);
 					recorder.toggleState();
+
+					// H
+					recorder.recordEvent(
+						createEvent({
+							type: 'keydown',
+							key: 'Shift',
+							shiftKey: true
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'keydown',
+							key: 'U+0048',
+							shiftKey: true
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'keyup',
+							key: 'U+0048',
+							shiftKey: true
+						})
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'Shift' })
+					);
+					// e
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+0045' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+0045' })
+					);
+					// l
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+004C' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+004C' })
+					);
+					// l
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+004C' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+004C' })
+					);
+					// o
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+004F' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+004F' })
+					);
+					// ,
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+002C' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+002C' })
+					);
+					// <space>
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+0020' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+0020' })
+					);
+					// w
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+0057' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+0057' })
+					);
+					// o
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+004F' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+004F' })
+					);
+					// r
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+0052' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+0052' })
+					);
+					// l
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+004C' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+004C' })
+					);
+					// d
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'U+0044' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'U+0044' })
+					);
+					// !
+					recorder.recordEvent(
+						createEvent({
+							type: 'keydown',
+							key: 'Shift',
+							shiftKey: true
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'keydown',
+							key: 'U+0021',
+							shiftKey: true
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'keyup',
+							key: 'U+0021',
+							shiftKey: true
+						})
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'Shift' })
+					);
+					// Shift/unshift test
+					recorder.recordEvent(
+						createEvent({
+							type: 'keydown',
+							key: 'Shift',
+							shiftKey: true
+						})
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'Shift' })
+					);
+					// keypad 0 test
+					recorder.recordEvent(
+						createEvent({
+							type: 'keydown',
+							key: 'U+0030',
+							location: 3
+						})
+					);
+					recorder.recordEvent(
+						createEvent({
+							type: 'keyup',
+							key: 'U+0030',
+							location: 3
+						})
+					);
+					// non-printable character test
+					recorder.recordEvent(
+						createEvent({ type: 'keydown', key: 'Enter' })
+					);
+					recorder.recordEvent(
+						createEvent({ type: 'keyup', key: 'Enter' })
+					);
+					recorder.setSuiteName('type');
+					assertScriptValue(devToolsPort, testData.type);
 				},
-				tests: {
-					'not recording': function() {
+
+				hotkey: {
+					beforeEach() {
+						recorder.setTabId(1);
 						recorder.toggleState();
-						assert.isFalse(recorder.recording);
-						recorder.recordEvent(
-							createEvent({ type: 'mousemove' })
-						);
-						assertScriptValue(devToolsPort, testData.blank);
 					},
-					click: function() {
-						recorder.recordEvent(
-							createEvent({ type: 'mousemove' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'mousedown', buttons: 1 })
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mouseup',
-								target: '/HTML/BODY[1]'
-							})
-						);
-						recorder.recordEvent(createEvent({ type: 'click' }));
-						assertScriptValue(devToolsPort, testData.click);
-					},
-					'double click': function() {
-						recorder.recordEvent(
-							createEvent({ type: 'mousemove' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'mousedown', buttons: 1 })
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mouseup',
-								target: '/HTML/BODY[1]'
-							})
-						);
-						recorder.recordEvent(createEvent({ type: 'click' }));
-						recorder.recordEvent(
-							createEvent({ type: 'mousedown', buttons: 1 })
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mouseup',
-								target: '/HTML/BODY[1]'
-							})
-						);
-						recorder.recordEvent(createEvent({ type: 'click' }));
-						recorder.recordEvent(createEvent({ type: 'dblclick' }));
-						assertScriptValue(devToolsPort, testData.doubleClick);
-					},
-					drag: function() {
-						recorder.recordEvent(
-							createEvent({
-								type: 'mousemove',
-								elementX: 0,
-								elementY: 0
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mousedown',
-								elementX: 0,
-								elementY: 0,
-								buttons: 1
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mousemove',
-								elementX: 20,
-								elementY: 20,
-								buttons: 1
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mouseup',
-								target: '/HTML/BODY[1]',
-								elementX: 40,
-								elementY: 40
-							})
-						);
-						assertScriptValue(devToolsPort, testData.drag);
-					},
-					frame: function() {
-						recorder.recordEvent(
-							createEvent({
-								type: 'mousemove',
-								targetFrame: [1, 2]
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mousedown',
-								targetFrame: [1, 2],
-								buttons: 1
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mouseup',
-								targetFrame: [1, 2],
-								target: '/HTML/BODY[1]'
-							})
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'click', targetFrame: [1, 2] })
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mousemove',
-								targetFrame: [1, 3]
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mousedown',
-								targetFrame: [1, 3],
-								buttons: 1
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'mouseup',
-								targetFrame: [1, 3],
-								target: '/HTML/BODY[1]'
-							})
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'click', targetFrame: [1, 3] })
-						);
-						assertScriptValue(devToolsPort, testData.frame);
-					},
-					type: function() {
-						// H
-						recorder.recordEvent(
-							createEvent({
-								type: 'keydown',
-								key: 'Shift',
-								shiftKey: true
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'keydown',
-								key: 'U+0048',
-								shiftKey: true
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'keyup',
-								key: 'U+0048',
-								shiftKey: true
-							})
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'Shift' })
-						);
-						// e
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+0045' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+0045' })
-						);
-						// l
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+004C' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+004C' })
-						);
-						// l
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+004C' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+004C' })
-						);
-						// o
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+004F' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+004F' })
-						);
-						// ,
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+002C' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+002C' })
-						);
-						// <space>
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+0020' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+0020' })
-						);
-						// w
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+0057' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+0057' })
-						);
-						// o
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+004F' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+004F' })
-						);
-						// r
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+0052' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+0052' })
-						);
-						// l
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+004C' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+004C' })
-						);
-						// d
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'U+0044' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'U+0044' })
-						);
-						// !
-						recorder.recordEvent(
-							createEvent({
-								type: 'keydown',
-								key: 'Shift',
-								shiftKey: true
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'keydown',
-								key: 'U+0021',
-								shiftKey: true
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'keyup',
-								key: 'U+0021',
-								shiftKey: true
-							})
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'Shift' })
-						);
-						// Shift/unshift test
-						recorder.recordEvent(
-							createEvent({
-								type: 'keydown',
-								key: 'Shift',
-								shiftKey: true
-							})
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'Shift' })
-						);
-						// keypad 0 test
-						recorder.recordEvent(
-							createEvent({
-								type: 'keydown',
-								key: 'U+0030',
-								location: 3
-							})
-						);
-						recorder.recordEvent(
-							createEvent({
-								type: 'keyup',
-								key: 'U+0030',
-								location: 3
-							})
-						);
-						// non-printable character test
-						recorder.recordEvent(
-							createEvent({ type: 'keydown', key: 'Enter' })
-						);
-						recorder.recordEvent(
-							createEvent({ type: 'keyup', key: 'Enter' })
-						);
-						assertScriptValue(devToolsPort, testData.type);
-					},
-					hotkey: {
-						'with other keypresses': function() {
+
+					tests: {
+						'with other keypresses'() {
 							const { method: insertCallback } = mock(
 								recorder,
 								'insertCallback'
@@ -816,9 +905,11 @@ registerSuite('Recorder', () => {
 								1,
 								'Pressing a hotkey should cause the corresponding hotkey to activate'
 							);
+							recorder.setSuiteName('hotkey');
 							assertScriptValue(devToolsPort, testData.hotkey);
 						},
-						'with no other keypresses': function() {
+
+						'with no other keypresses'() {
 							const { method: insertCallback } = mock(
 								recorder,
 								'insertCallback'
@@ -862,7 +953,8 @@ registerSuite('Recorder', () => {
 							);
 							assertScriptValue(devToolsPort, testData.blank);
 						},
-						'modifier-free hotkeys': function() {
+
+						'modifier-free hotkeys'() {
 							const { method: insertCallback } = mock(
 								recorder,
 								'insertCallback'
@@ -904,7 +996,10 @@ registerSuite('Recorder', () => {
 								'Pressing a hotkey with other modifiers active should not cause the hotkey to activate'
 							);
 							recorder.recordEvent(
-								createEvent({ type: 'keydown', key: 'Home' })
+								createEvent({
+									type: 'keydown',
+									key: 'Home'
+								})
 							);
 							recorder.recordEvent(
 								createEvent({ type: 'keyup', key: 'Home' })
@@ -915,8 +1010,9 @@ registerSuite('Recorder', () => {
 								'Pressing a hotkey with other modifiers active should not cause the hotkey to activate'
 							);
 						},
+
 						'when recording is off': {
-							toggleState: function() {
+							toggleState() {
 								recorder.toggleState();
 								assert.isFalse(recorder.recording);
 								recorder.setHotkey('toggleState', {
@@ -956,7 +1052,8 @@ registerSuite('Recorder', () => {
 									'toggleState hotkey should work even if recording is off'
 								);
 							},
-							others: function() {
+
+							others() {
 								recorder.toggleState();
 								assert.isFalse(recorder.recording);
 								const { method: insertCallback } = mock(
@@ -1037,21 +1134,41 @@ registerSuite('Recorder', () => {
 				const eventProxyPort = chrome.createPort('eventProxy');
 				chrome.runtime.onConnect.emit(eventProxyPort);
 				eventProxyPort.postMessage.clear();
-				recorder.setTabId(1);
+
+				recorder.setTabId(2);
 				recorder.toggleState();
+
 				recorder.setFindDisplayed(true);
-				assert.lengthOf(devToolsPort.postMessage.calls, 3);
-				recorder.recordEvent(createEvent({ type: 'mousemove' }));
+
+				// Expect 4 calls:
+				//   setScript for initial suite creation
+				//   setScript for initial get
+				//   setScript for setSuiteName (from URL in initial get)
+				//   setRecording to enable recording
+				assert.lengthOf(devToolsPort.postMessage.calls, 4);
+				recorder.recordEvent(
+					createEvent({
+						type: 'mousemove',
+						elementX: 12,
+						elementY: 23,
+						target: 'id("b2")'
+					})
+				);
 				recorder.insertMouseMove();
+				recorder.setSuiteName('findDisplayed');
 				assertScriptValue(
 					devToolsPort,
 					testData.findDisplayed,
 					'Script should use "findDisplayedByXpath"'
 				);
+
 				recorder.clear();
 				recorder.setFindDisplayed(false);
-				recorder.recordEvent(createEvent({ type: 'mousemove' }));
+				recorder.recordEvent(
+					createEvent({ type: 'mousemove', target: 'id("b2")' })
+				);
 				recorder.insertMouseMove();
+				recorder.setSuiteName('mouseMove');
 				assertScriptValue(
 					devToolsPort,
 					testData.mouseMove,

@@ -275,8 +275,9 @@ export default class Recorder {
 		const handleNavigation = (
 			detail: chrome.webNavigation.WebNavigationTransitionCallbackDetails
 		) => {
-			// frameId !== 0 is a subframe; we could try navigating these if we could figure out what the entry
-			// for the subframe was for a `switchToFrame` call
+			// frameId !== 0 is a subframe; we could try navigating these if we
+			// could figure out what the entry for the subframe was for a
+			// `switchToFrame` call
 			if (
 				!this.recording ||
 				detail.tabId !== this.tabId ||
@@ -364,7 +365,7 @@ export default class Recorder {
 				this._record('end', null, 1);
 			}
 			if (this._lastTargetFrame.length) {
-				this._record('switchToFrame', [null]);
+				this._record('switchToFrame', [anyNull]);
 			}
 			this._lastTarget = null;
 			this._lastTargetFrame = [];
@@ -594,7 +595,7 @@ export default class Recorder {
 
 			if (targetFrameChanged) {
 				if (lastTargetFrame.length) {
-					this._record('switchToFrame', [null]);
+					this._record('switchToFrame', [anyNull]);
 				}
 				evt.targetFrame.forEach(frameId => {
 					this._record('switchToFrame', [frameId]);
@@ -754,13 +755,15 @@ function createCommandText(
 	let text = `\n${getIndent(3)}${getIndent(indent)}.${method}(`;
 
 	if (args && args.length) {
-		args.forEach(function(arg, index) {
+		args.forEach((arg, index) => {
 			if (index > 0) {
 				text += ', ';
 			}
 
 			if (typeof arg === 'string') {
 				text += `'${arg.replace(/'/g, "\\'")}'`;
+			} else if (arg === anyNull) {
+				text += '<any>null';
 			} else {
 				text += String(arg);
 			}
@@ -945,3 +948,5 @@ const templates = {
 	testClose: [';', '  });'].join('\n'),
 	suiteClose: ['', '});', ''].join('\n')
 };
+
+const anyNull = {};

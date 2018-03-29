@@ -15,6 +15,10 @@ module.exports = {
 			{
 				oneOf: [
 					{
+						test: /tests\/integration\/.*\.ts$/,
+						use: 'raw-loader'
+					},
+					{
 						test: /tests\/.*\.ts$/,
 						use: [
 							{

@@ -1,5 +1,8 @@
 import { createMockMethod, pullFromArray, Method } from './util';
 
+export const testHost = 'http://localhost:9000/tests/data';
+export const testPage = 'http://localhost:9000/tests/data/frame.html';
+
 export default class Chrome {
 	devtools = {
 		inspectedWindow: {
@@ -28,7 +31,9 @@ export default class Chrome {
 		executeScript: createMockMethod(),
 		get: createMockMethod((tabId: number, callback: Function) => {
 			const tabs: { [key: number]: object } = {
-				1: { url: 'http://example.com' }
+				1: { url: testPage },
+				2: { url: `${testHost}/elements.html` },
+				3: { url: `${testHost}/superframe.html` }
 			};
 			callback(tabs[tabId]);
 		})

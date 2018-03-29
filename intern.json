@@ -1,5 +1,6 @@
 {
 	"suites": "tests/build/tests.js",
+	"functionalSuites": "tests/_tests/**/*.js",
 	"filterErrorStack": true,
 	"reporters": [
 		{
@@ -9,5 +10,15 @@
 				"hideSkipped": true
 			}
 		}
-	]
+	],
+	"environments": {
+		"browserName": "chrome",
+		"chromeOptions": {
+			"args": ["headless", "disable-gpu", "no-sandbox"]
+		},
+		"fixSessionCapabilities": "no-detect"
+	},
+	"tunnelOptions": {
+		"drivers": [{ "name": "chrome", "version": "2.36" }]
+	}
 }
