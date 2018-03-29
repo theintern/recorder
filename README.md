@@ -6,65 +6,134 @@
 
 <!-- start-github-only -->
 [![CI status](https://travis-ci.org/theintern/recorder.svg)](https://travis-ci.org/theintern/recorder) <!-- end-github-only --> 
-[![Intern](https://theintern.io/images/intern-v3.svg)](https://github.com/theintern/intern/)
+[![Intern](https://theintern.io/images/intern-v4.svg)](https://github.com/theintern/intern/)
 
-The Intern Recorder is a Chrome Developer Tools extension that assists in the creation of functional tests for Web applications by automatically recording user interaction with a browser into a format compatible with the Intern testing framework.
+The Intern Recorder is a Chrome Developer Tools extension that assists in the
+creation of functional tests for Web applications by automatically recording
+user interaction with a browser into a format compatible with the Intern
+4+ testing framework.
 
-## Support
+<!-- vim-markdown-toc GFM -->
 
-Please read the [contribution guidelines](https://github.com/theintern/recorder/blob/master/CONTRIBUTING.md) for information on how to get help! New issues and enhancement requests should be submitted to the [main issue tracker](https://github.com/theintern/intern/issues/new?body=Description:%0A%0ASteps+to+reproduce:%0A%0A1.%20%E2%80%A6%0A2.%20%E2%80%A6%0A3.%20%E2%80%A6%0A%0AExpected%20result:%0AActual%20result:%0A%0AIntern%20version:%0ARecorder%20version:%0A%0AAny%20additional%20information:).
+* [Installation](#installation)
+* [Usage](#usage)
+  * [Hotkeys](#hotkeys)
+  * [Configuration](#configuration)
+* [Developing](#developing)
+  * [Setup](#setup)
+  * [Internal architecture](#internal-architecture)
+  * [Debugging](#debugging)
+* [Support](#support)
+* [Special thanks](#special-thanks)
+* [Licensing](#licensing)
+
+<!-- vim-markdown-toc -->
 
 ## Installation
 
-The latest version of Intern Recorder can be installed for free from the [Chrome Web Store](https://chrome.google.com/webstore/detail/intern-recorder/oalhlikaceknjlnmoombecafnmhbbgna "Intern Recorder on Chrome Web Store").
-
-Development versions can be installed by opening the Extensions tab in Chrome, enabling Developer mode, choosing “Load unpacked extension”, and choosing the directory where the Intern Recorder repository is checked out.
+The latest version of Intern Recorder can be installed for free from the
+[Chrome Web Store].
 
 ## Usage
 
-The Intern Recorder is a Dev Tools extension, so it can be accessed from Dev Tools. On a tab you wish to record, open Dev Tools, then select the Intern tab.
+The Intern Recorder is a Dev Tools extension, so it can be accessed from the
+Dev Tools panel. On a tab you wish to record, open Dev Tools, then select the
+Intern tab.
 
-![Intern UI](https://theintern.github.io/recorder/images/ui.svg)
+![Intern UI](https://raw.githubusercontent.com/theintern/recorder/master/docs/usage.png)
 
-Start recording actions by clicking the start/stop recording button. The recorder automatically generates a single suite containing all the generated tests for the session.
+Start recording actions by clicking the **start/stop recording** button. The
+recorder automatically generates a single suite containing all the generated
+tests for the session.
 
-The clear tests button will remove all previously recorded actions/tests.
+The **clear tests** button will remove all previously recorded actions/tests.
 
-The new test button will create a new test.
+The **new test** button will create a new test.
 
-The save button will save the generated test script to a file.
+The **save** button will save the generated test script to a file.
 
 ### Hotkeys
 
-The Recorder also includes configurable hotkeys that can be used to perform common operations during a test recording. These operations are:
+The Recorder also includes configurable hotkeys that can be used to perform
+common operations during a test recording. These operations are:
 
-* Pause/resume recorder. This is equivalent to clicking the record button in Dev Tools.
-* Insert callback. This inserts a `then` command into the script containing an empty callback function.
-* Insert move to current mouse position. This inserts a `moveMouseTo` command into the script wherever the mouse is currently positioned.
+* **Pause/resume recorder**. This is equivalent to clicking the record button in
+  Dev Tools.
+* **Insert callback**. This inserts a `then` command into the script containing an
+  empty callback function.
+* **Insert <em>move to current mouse position</em>**. This inserts a `moveMouseTo` command
+  into the script wherever the mouse is currently positioned.
 
-Note that the hotkeys only work when you are focused on the tab of the page being tested. Pressing the hotkeys when the Dev Tools window is focused will do nothing.
+> 💡 The hotkeys only work when you are focused on the tab of the page
+being tested. Pressing the hotkeys when the Dev Tools window is focused will do
+nothing.
 
-## Configuration
+> 💡 The default hotkeys may not work as expected on your system’s keyboard
 
-Currently, the only configuration available for the Intern Recorder are the hotkey combinations. Simply click in one of the input fields and press the key combination you’d like to use to configure hotkeys. Hotkey configuration is persisted to local storage.
+### Configuration
 
-## Internal architecture
+Currently, the only configuration available for the Intern Recorder are the
+hotkey combinations. Simply click in one of the input fields and press the key
+combination you’d like to use to configure hotkeys. Hotkey configuration is
+persisted to local storage.
 
-Chrome restricts which extension APIs are available to Dev Tools scripts, so the Recorder is designed using a multi-process architecture:
+## Developing
+
+### Setup
+
+1. Clone this repository
+2. Run `npm install` and `npm build-watch`. This will start a build watcher
+   that will update Intern Recorder as you make changes.
+3. Opening the Extensions tab in Chrome (`chrome://extensions`)
+4. Enable Developer mode with the toggle at the top of the page
+5. Choose ‘LOAD UNPACKED’ and select the directory `<recorder_repo>/build`
+
+### Internal architecture
+
+Chrome restricts which extension APIs are available to Dev Tools scripts, so
+the Recorder is designed using a multi-process architecture:
 
 ![Intern UI](https://theintern.github.io/recorder/images/architecture.svg)
 
-The recorder itself is maintained in the background script, which has access to the full Chrome extension API. The user interface is displayed from the Dev Tools page script and communicates with the recorder through a `chrome.runtime` messaging port. To intercept page interaction, the background script injects an event forwarding script into the browser tab that listens for various DOM events and passes them to the recorder through a second `chrome.runtime` messaging port.
+The recorder itself is maintained in the background script, which has access to
+the full Chrome extension API. The user interface is displayed from the Dev
+Tools page script and communicates with the recorder through a `chrome.runtime`
+messaging port. To intercept page interaction, the background script injects an
+event forwarding script into the browser tab that listens for various DOM
+events and passes them to the recorder through a second `chrome.runtime`
+messaging port.
 
-## Debugging
+### Debugging
 
-* Injected content (eventProxy.js): Errors and console statements will show up directly in Dev Tools for the page being recorded.
-* Background script (background.js, Recorder.js): Open the Chrome extensions tab, find Intern Recorder in the list of loaded extensions, and click the “background page” link next to “Inspect views”. This will open a new Dev Tools window for the background script.
-* Dev tools page (devtools.html, devtools.js, panel.html, RecorderProxy.js): Open Dev Tools, undock it (using the top right icon, next to Settings, click and hold for drop-down), choose the Intern tab, then open another Dev Tools window. The second Dev Tools window will be inspecting the first Dev Tools window.
+* Injected content (`content.ts`, `EventProxy.ts`): Errors and console
+  statements will show up directly in Dev Tools for the page being recorded.
+* Background script (`background.ts`, `Recorder.ts`): Open the Chrome
+  extensions tab, find Intern Recorder in the list of loaded extensions, and
+  click the “background page” link next to “Inspect views”. This will open a
+  new Dev Tools window for the background script.
+* Dev tools page (`devtools.html`, `devtools.ts`, `panel.html`,
+  `RecorderProxy.ts`): Open Dev Tools, undock it (using the top right icon,
+  next to Settings), choose the Intern tab, then open another Dev Tools window.
+  The second Dev Tools window will be inspecting the first Dev Tools window.
+
+## Support
+
+Any general questions about how to use Intern Recorder should be directed to
+[Stack Overflow](https://stackoverflow.com) (using the `intern` tag) or our
+[Gitter channel](https://gitter.im/theintern/intern).
+
+If you think you’ve found a bug or have a specific enhancement request, file an
+issue in the [issue tracker](https://github.com/theintern/recorder/issues).
+Please read the [contribution guidelines](./CONTRIBUTING.md) for more
+information.
 
 ## Special thanks
 
-A very special thanks to [SITA](http://www.sita.aero/) for sponsoring work on the first release of the Intern Recorder.
+A very special thanks to [Built](https://www.getbuilt.com/) for sponsoring the
+work to update Recorder for Intern 4!
+
+Continuing thanks to [SITA](https://www.sita.aero/) for sponsoring the first
+release of the Intern Recorder and making this tool possible.
 
 <!-- start-github-only -->
 ## Licensing
@@ -73,3 +142,7 @@ Intern Recorder is a JS Foundation project offered under the [New BSD](LICENSE) 
 
 © [SitePen, Inc.](http://sitepen.com/) and its [contributors](https://github.com/theintern/recorder/graphs/contributors)
 <!-- end-github-only -->
+
+[Chrome Web Store]: https://chrome.google.com/webstore/detail/intern-recorder/oalhlikaceknjlnmoombecafnmhbbgna
+[contribution guidelines]: ./CONTRIBUTING.md
+[main issue tracker]: https://github.com/theintern/intern/issues/new?body=Description:%0A%0ASteps+to+reproduce:%0A%0A1.%20%E2%80%A6%0A2.%20%E2%80%A6%0A3.%20%E2%80%A6%0A%0AExpected%20result:%0AActual%20result:%0A%0AIntern%20version:%0ARecorder%20version:%0A%0AAny%20additional%20information:
